@@ -218,9 +218,12 @@ function ChatView() {
             })) {
               if (event.type === 'token') {
                 flushSync(() => {
-                  if (!streamedAnswer && showRunSteps) setShowRunSteps(false)
                   streamedAnswer += event.content
                   setStreamingAgent({ content: streamedAnswer, agent })
+                  // Only drop run steps when visible (non-tool-call) text exists
+                  if (showRunSteps && stripToolCalls(streamedAnswer)) {
+                    setShowRunSteps(false)
+                  }
                 })
               } else if (event.type === 'tool_use') {
                 setRunStep('tools')
@@ -332,14 +335,12 @@ function ChatView() {
         }
       }
 
-      // Auto-title: extractKeywords returns a tight phrase fast; fallback to slice
+      // Auto-title: extract keywords then cap to 5 words
       if (isNewSession && userContent) {
+        const toTitle = str => str.trim().split(/\s+/).slice(0, 5).join(' ')
         extractKeywords(userContent.slice(0, 300))
-          .then(r => {
-            const title = r.keywords?.trim().slice(0, 60) || userContent.slice(0, 60)
-            return renameSession(sessionId, title)
-          })
-          .catch(() => renameSession(sessionId, userContent.slice(0, 60)))
+          .then(r => renameSession(sessionId, toTitle(r.keywords || userContent)))
+          .catch(() => renameSession(sessionId, toTitle(userContent)))
       }
     } catch (err) {
       addLocalMessage({ role: 'error', content: err.message || 'Something went wrong.' })
