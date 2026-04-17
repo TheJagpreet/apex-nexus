@@ -58,7 +58,7 @@ help:
 setup: setup-rag setup-identity setup-gateway setup-agents setup-portal
 
 setup-rag:
-	cd services/apex-rag && uv venv .venv --python 3.10 && uv pip install -e ".[dev,server]"
+	cd services/apex-rag && uv venv .venv --python 3.11 && uv pip install -e ".[dev,server]"
 
 setup-identity:
 	cd services/apex-identity && uv venv .venv --python 3.11 && uv pip install -e ".[dev]"

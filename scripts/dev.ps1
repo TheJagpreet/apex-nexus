@@ -61,7 +61,7 @@ foreach ($svc in $targets) {
     $dir  = Join-Path $RepoRoot $svc.Dir
     # The child window sets its title, cd's into the service dir, then runs the command.
     $expr = "& { `$host.UI.RawUI.WindowTitle = '$($svc.Name)'; Set-Location '$dir'; $($svc.Cmd) }"
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", $expr
+    Start-Process powershell -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", $expr
     Write-Host "  $($svc.Name.PadRight(15)) -> http://localhost:$($svc.Port)  [new window]"
 }
 

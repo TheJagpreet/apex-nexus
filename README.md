@@ -54,7 +54,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full deep-dive, and [do
 
 | Service | Language | Port | Responsibility |
 |---------|----------|------|----------------|
-| [`services/apex-rag`](services/apex-rag/) | Python 3.10+ | 8000 | Ingestion, chunking, embedding, BM25 + semantic hybrid search, reranking |
+| [`services/apex-rag`](services/apex-rag/) | Python 3.11+ | 8000 | Ingestion, chunking, embedding, BM25 + semantic hybrid search, reranking |
 | [`services/apex-identity`](services/apex-identity/) | Python 3.11+ | 8001 | JWT auth, user management, sessions, message persistence (SQLite + Alembic) |
 | [`services/apex-gateway`](services/apex-gateway/) | Python 3.11+ | 8002 | Thin Ollama LLM wrapper — streaming + non-streaming generation |
 | [`services/apex-agents`](services/apex-agents/) | Python 3.11+ | 8003 | Agent registry, LangGraph execution engine, SSE token streaming |
@@ -69,7 +69,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full deep-dive, and [do
 | [uv](https://docs.astral.sh/uv/) | ≥ 0.4 | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 | [Node.js](https://nodejs.org/) | 20+ | [nodejs.org](https://nodejs.org/) |
 | [Ollama](https://ollama.ai/) | latest | [ollama.ai](https://ollama.ai/) |
-| Python | 3.10 (rag) · 3.11 (others) | managed by `uv` |
+| Python | 3.11+ (all services) | managed by `uv` |
 | make | any | Git Bash / WSL / `winget install GnuWin32.Make` |
 
 ```bash

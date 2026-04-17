@@ -8,7 +8,7 @@ Multi-service RAG platform — five independently deployable services in one rep
 
 | Path | Language | Port | Responsibility |
 |------|----------|------|----------------|
-| `services/apex-rag` | Python 3.10+ | 8000 | Ingestion, chunking, embedding, vector search |
+| `services/apex-rag` | Python 3.11+ | 8000 | Ingestion, chunking, embedding, vector search |
 | `services/apex-identity` | Python 3.11+ | 8001 | JWT auth, users, sessions, messages (SQLite) |
 | `services/apex-gateway` | Python 3.11+ | 8002 | Thin Ollama LLM wrapper |
 | `services/apex-agents` | Python 3.11+ | 8003 | Agent registry + LangGraph execution + SSE |

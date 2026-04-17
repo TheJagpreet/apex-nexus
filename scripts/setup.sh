@@ -6,9 +6,9 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
-echo "==> apex-rag: installing (Python 3.10)"
+echo "==> apex-rag: installing (Python 3.11)"
 cd services/apex-rag
-uv venv .venv --python 3.10
+uv venv .venv --python 3.11
 uv pip install -e ".[dev,server]"
 cd "$REPO_ROOT"
 

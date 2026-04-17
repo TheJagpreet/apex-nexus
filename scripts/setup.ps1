@@ -11,9 +11,9 @@ Push-Location $RepoRoot
 function Step([string]$msg) { Write-Host "`n==> $msg" -ForegroundColor Cyan }
 
 try {
-    Step "apex-rag: installing (Python 3.10)"
+    Step "apex-rag: installing (Python 3.11)"
     Push-Location services\apex-rag
-    uv venv .venv --python 3.10
+    uv venv .venv --python 3.11
     uv pip install -e ".[dev,server]"
     Pop-Location
 

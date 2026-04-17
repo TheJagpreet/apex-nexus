@@ -6,7 +6,7 @@ Retrieval-only RAG service. **Never calls an LLM.** Ingestion + vector search on
 
 ```bash
 # From this directory (services/apex-rag/)
-uv venv .venv --python 3.10
+uv venv .venv --python 3.11
 source .venv/bin/activate      # Windows: .venv\Scripts\activate
 uv pip install -e ".[dev,server]"
 
