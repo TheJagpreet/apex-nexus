@@ -23,10 +23,10 @@ Where `<name>` is one of: `rag`, `identity`, `gateway`, `agents`, `portal`
 
 | Service | Command |
 |---------|---------|
-| rag | `cd services/apex-rag && .venv/bin/python server.py` |
-| identity | `cd services/apex-identity && .venv/bin/python -m apex_identity.main` |
-| gateway | `cd services/apex-gateway && .venv/bin/python server.py` |
-| agents | `cd services/apex-agents && .venv/bin/python server.py` |
+| rag | `cd services/apex-rag && uv run python server.py` |
+| identity | `cd services/apex-identity && uv run python -m apex_identity.main` |
+| gateway | `cd services/apex-gateway && uv run python server.py` |
+| agents | `cd services/apex-agents && uv run python server.py` |
 | portal | `cd apps/apex-portal && npm run dev` |
 
 ## Shortcuts
