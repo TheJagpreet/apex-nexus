@@ -1,0 +1,39 @@
+# Normalise line endings to LF in the repo; check-out as LF everywhere.
+# This keeps diffs clean across Windows / macOS / Linux contributors.
+
+* text=auto eol=lf
+
+# Shell scripts must stay LF even on Windows checkouts
+*.sh  text eol=lf
+
+# Windows-native scripts get CRLF on Windows checkouts
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Python / JS / config — LF
+*.py   text eol=lf
+*.ts   text eol=lf
+*.tsx  text eol=lf
+*.js   text eol=lf
+*.jsx  text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.yaml text eol=lf
+*.yml  text eol=lf
+*.md   text eol=lf
+*.txt  text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
+
+# Binary — never diff or convert
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.woff binary
+*.woff2 binary
+*.db   binary
+*.sqlite binary
+*.sqlite3 binary

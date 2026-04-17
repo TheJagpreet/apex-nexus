@@ -1,0 +1,142 @@
+services:
+
+  # ─── apex-rag ──────────────────────────────────────────────────────────────
+  apex-rag:
+    build:
+      context: ./services/apex-rag
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      APEX_RAG_EMBED_BACKEND: ${APEX_RAG_EMBED_BACKEND:-ollama}
+      APEX_RAG_OLLAMA_EMBED_MODEL: ${APEX_RAG_OLLAMA_EMBED_MODEL:-nomic-embed-text}
+      APEX_RAG_OLLAMA_HOST: http://ollama:11434
+      APEX_RAG_PERSIST_DIR: /data/chroma_db
+      APEX_RAG_COLLECTION: ${APEX_RAG_COLLECTION:-apex_default}
+      APEX_RAG_CHUNK_SIZE: ${APEX_RAG_CHUNK_SIZE:-512}
+      APEX_RAG_CHUNK_OVERLAP: ${APEX_RAG_CHUNK_OVERLAP:-64}
+    volumes:
+      - rag_data:/data
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── apex-identity ─────────────────────────────────────────────────────────
+  apex-identity:
+    build:
+      context: ./services/apex-identity
+      dockerfile: Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
+      DATABASE_URL: sqlite:////data/apex_identity.db
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      HOST: 0.0.0.0
+      PORT: 8001
+    volumes:
+      - identity_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── apex-gateway ──────────────────────────────────────────────────────────
+  apex-gateway:
+    build:
+      context: ./services/apex-gateway
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8002"
+    environment:
+      APEX_GW_OLLAMA_HOST: http://ollama:11434
+      APEX_GW_OLLAMA_MODEL: ${APEX_GW_OLLAMA_MODEL:-llama3}
+      APEX_GW_HOST: 0.0.0.0
+      APEX_GW_PORT: 8002
+    depends_on:
+      - ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── apex-agents ───────────────────────────────────────────────────────────
+  apex-agents:
+    build:
+      context: ./services/apex-agents
+      dockerfile: Dockerfile
+    ports:
+      - "8003:8003"
+    environment:
+      APEX_AGENTS_HOST: 0.0.0.0
+      APEX_AGENTS_PORT: 8003
+      APEX_AGENTS_DB_URL: sqlite:////data/apex_agents.db
+      APEX_AGENTS_GATEWAY_URL: http://apex-gateway:8002
+      APEX_AGENTS_RAG_URL: http://apex-rag:8000
+      APEX_AGENTS_OLLAMA_HOST: http://ollama:11434
+      APEX_AGENTS_OLLAMA_MODEL: ${APEX_AGENTS_OLLAMA_MODEL:-llama3}
+      APEX_AGENTS_CORS_ORIGINS: ${APEX_AGENTS_CORS_ORIGINS:-http://localhost:5173}
+    volumes:
+      - agents_data:/data
+    depends_on:
+      - apex-gateway
+      - apex-rag
+      - ollama
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ─── apex-portal ───────────────────────────────────────────────────────────
+  apex-portal:
+    build:
+      context: ./apps/apex-portal
+      dockerfile: Dockerfile
+      args:
+        VITE_RAG_URL: ${VITE_RAG_URL:-http://localhost:8000}
+        VITE_IDENTITY_URL: ${VITE_IDENTITY_URL:-http://localhost:8001}
+        VITE_GATEWAY_URL: ${VITE_GATEWAY_URL:-http://localhost:8002}
+        VITE_AGENTS_URL: ${VITE_AGENTS_URL:-http://localhost:8003}
+    ports:
+      - "5173:80"
+    depends_on:
+      - apex-identity
+      - apex-rag
+      - apex-gateway
+      - apex-agents
+    restart: unless-stopped
+
+  # ─── ollama ────────────────────────────────────────────────────────────────
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+    # Uncomment to use GPU:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+volumes:
+  rag_data:
+  identity_data:
+  agents_data:
+  ollama_data:
