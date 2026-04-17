@@ -115,6 +115,11 @@ function ChatView() {
         let answer = ''
         let sources = []
 
+        const history = messages
+          .filter(m => m.role === 'user' || m.role === 'assistant')
+          .slice(-20)
+          .map(m => ({ role: m.role, content: m.content }))
+
         if (agent) {
           // ── Agent path — stream via apex-agents ─────────────────────────
           // Optionally pull RAG context first if a collection is also selected
@@ -193,7 +198,7 @@ function ChatView() {
           }
           sources = ragResult.sources ?? []
           try {
-            const gen = await generate(userContent, ragResult.context ?? '')
+            const gen = await generate(userContent, ragResult.context ?? '', history)
             answer = gen.answer
           } catch {
             answer = ragResult.sources?.length
@@ -211,7 +216,7 @@ function ChatView() {
           try { ragResult = await query(userContent) } catch { /* empty */ }
           sources = ragResult.sources ?? []
           try {
-            const gen = await generate(userContent, ragResult.context ?? '')
+            const gen = await generate(userContent, ragResult.context ?? '', history)
             answer = gen.answer
           } catch {
             answer = 'Could not reach the LLM gateway. Is apex-gateway running?'
@@ -221,7 +226,7 @@ function ChatView() {
         } else {
           // ── No RAG context — send straight to LLM ───────────────────────
           try {
-            const gen = await generate(userContent, '')
+            const gen = await generate(userContent, '', history)
             answer = gen.answer
           } catch {
             answer = 'Could not reach the LLM gateway. Is apex-gateway running on port 8002?'

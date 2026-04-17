@@ -45,13 +45,27 @@ def load_pdf(path: str | Path) -> Document:
     path = Path(path)
     reader = PdfReader(str(path))
     pages = []
-    for i, page in enumerate(reader.pages):
+    for page in reader.pages:
         text = page.extract_text() or ""
+        if not text.strip():
+            # Fallback: layout-aware extraction (pypdf >= 3.x) handles some complex PDFs better
+            try:
+                text = page.extract_text(extraction_mode="layout") or ""
+            except Exception:
+                text = ""
         if text.strip():
             pages.append(text)
 
+    content = "\n\n".join(pages)
+    if not content.strip():
+        raise ValueError(
+            f"No text could be extracted from '{path.name}'. "
+            "The PDF may be scanned or image-based. "
+            "Convert it to text first (e.g. with OCR) before ingesting."
+        )
+
     return Document(
-        content="\n\n".join(pages),
+        content=content,
         metadata={"source": str(path), "type": "pdf", "pages": len(reader.pages)},
     )
 

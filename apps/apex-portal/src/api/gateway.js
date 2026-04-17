@@ -12,11 +12,11 @@ async function handleResponse(res) {
  * Generate an LLM answer from retrieved context.
  * Returns { question, answer, model }
  */
-export async function generate(question, context) {
+export async function generate(question, context, history = []) {
   return handleResponse(await fetch(`${BASE}/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, context }),
+    body: JSON.stringify({ question, context, history }),
   }))
 }
 

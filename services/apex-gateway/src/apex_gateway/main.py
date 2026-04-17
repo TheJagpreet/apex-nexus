@@ -36,8 +36,8 @@ app.add_middleware(
 _llm: OllamaLLM | None = None
 
 _RAG_PROMPT_TEMPLATE = """\
-You are a helpful assistant. Answer the question using the context provided below.
-Base your answer on the context. If the context is insufficient, say so briefly.
+You are a helpful assistant. Use the context below if it is relevant to the question.
+Apply your own knowledge and judgment — the context is supplementary, not mandatory.
 
 Context:
 {context}
@@ -53,6 +53,30 @@ Question: {question}
 
 Answer:"""
 
+_RAG_WITH_HISTORY_TEMPLATE = """\
+You are a helpful assistant. Use the context below if it is relevant to the question.
+Apply your own knowledge and judgment — the context is supplementary, not mandatory.
+
+Context:
+{context}
+
+Conversation so far:
+{history}
+
+User: {question}
+
+Answer:"""
+
+_CHAT_WITH_HISTORY_TEMPLATE = """\
+You are a helpful, knowledgeable assistant.
+
+Conversation so far:
+{history}
+
+User: {question}
+
+Answer:"""
+
 _KEYWORDS_TEMPLATE = """\
 Extract 3-6 concise search keywords or short phrases from the following question. \
 These keywords will be used to retrieve relevant documents from a vector database. \
@@ -61,6 +85,14 @@ Return ONLY the keywords separated by spaces, no punctuation, no explanation.
 Question: {question}
 
 Keywords:"""
+
+
+def _format_history(history: list[dict]) -> str:
+    lines = []
+    for turn in history:
+        role = "User" if turn.get("role") == "user" else "Assistant"
+        lines.append(f"{role}: {turn.get('content', '').strip()}")
+    return "\n".join(lines)
 
 
 def get_llm() -> OllamaLLM:
@@ -80,6 +112,7 @@ class GenerateRequest(BaseModel):
     question: str = Field(..., min_length=1, description="User question.")
     context: str = Field(default="", description="Retrieved context chunks joined by newlines.")
     model: str | None = Field(default=None, description="Override the default Ollama model.")
+    history: list[dict] = Field(default_factory=list, description="Prior turns [{role, content}].")
 
 
 class GenerateResponse(BaseModel):
@@ -116,8 +149,14 @@ def generate(req: GenerateRequest) -> GenerateResponse:
         req.model = settings.ollama_model
 
     context = req.context.strip()
-    if context:
+    history_str = _format_history(req.history[-20:]) if req.history else ""
+
+    if context and history_str:
+        prompt = _RAG_WITH_HISTORY_TEMPLATE.format(context=context, history=history_str, question=req.question)
+    elif context:
         prompt = _RAG_PROMPT_TEMPLATE.format(context=context, question=req.question)
+    elif history_str:
+        prompt = _CHAT_WITH_HISTORY_TEMPLATE.format(history=history_str, question=req.question)
     else:
         prompt = _CHAT_PROMPT_TEMPLATE.format(question=req.question)
 
