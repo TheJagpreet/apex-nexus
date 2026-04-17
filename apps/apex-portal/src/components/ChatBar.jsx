@@ -174,7 +174,6 @@ export default function ChatBar({ onSend, loading }) {
     onSend({ text, files, collection, agent })
     setText('')
     setFiles([])
-    setAgent(null)
     if (textareaRef.current) textareaRef.current.style.height = 'auto'
   }
 

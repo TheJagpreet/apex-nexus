@@ -70,6 +70,11 @@ BUILTIN_TOOLS: dict[str, dict[str, Any]] = {
         "description": "Fetch the text content of a public URL.",
         "enabled_by_default": False,
     },
+    "web_search": {
+        "name": "Web Search",
+        "description": "Search the web via DuckDuckGo and return titles, URLs, and snippets.",
+        "enabled_by_default": False,
+    },
 }
 
 # Convenience: the merged registry shown to the API includes custom tools from DB.
