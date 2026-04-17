@@ -22,11 +22,11 @@ $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
 $allServices = @(
-    @{ Name = 'apex-rag';      Key = 'rag';      Dir = 'services\apex-rag';      Cmd = 'uv run --no-sync python server.py';             Port = 8000 }
-    @{ Name = 'apex-identity'; Key = 'identity'; Dir = 'services\apex-identity'; Cmd = 'uv run --no-sync python -m apex_identity.main'; Port = 8001 }
-    @{ Name = 'apex-gateway';  Key = 'gateway';  Dir = 'services\apex-gateway';  Cmd = 'uv run --no-sync python server.py';             Port = 8002 }
-    @{ Name = 'apex-agents';   Key = 'agents';   Dir = 'services\apex-agents';   Cmd = 'uv run --no-sync python server.py';             Port = 8003 }
-    @{ Name = 'apex-portal';   Key = 'portal';   Dir = 'apps\apex-portal';       Cmd = 'npm run dev';                         Port = 5173 }
+    @{ Name = 'apex-rag';      Key = 'rag';      Dir = 'services\apex-rag';      Cmd = '.venv\Scripts\python server.py';             Port = 8000 }
+    @{ Name = 'apex-identity'; Key = 'identity'; Dir = 'services\apex-identity'; Cmd = '.venv\Scripts\python -m apex_identity.main'; Port = 8001 }
+    @{ Name = 'apex-gateway';  Key = 'gateway';  Dir = 'services\apex-gateway';  Cmd = '.venv\Scripts\python server.py';             Port = 8002 }
+    @{ Name = 'apex-agents';   Key = 'agents';   Dir = 'services\apex-agents';   Cmd = '.venv\Scripts\python server.py';             Port = 8003 }
+    @{ Name = 'apex-portal';   Key = 'portal';   Dir = 'apps\apex-portal';       Cmd = 'npm run dev';                               Port = 5173 }
 )
 
 $targets = if ($Service) {
@@ -51,15 +51,11 @@ if (@($targets).Count -eq 1) {
 }
 
 # ── Multiple services: each gets its own PowerShell window ──────────────────
-# Start-Job runs in an isolated session that may not inherit PATH; Start-Process
-# opens a real terminal window so you can see output and errors directly.
-
 Write-Host "Starting apex-nexus services (one window per service)..." -ForegroundColor Cyan
 Write-Host ""
 
 foreach ($svc in $targets) {
     $dir  = Join-Path $RepoRoot $svc.Dir
-    # The child window sets its title, cd's into the service dir, then runs the command.
     $expr = "& { `$host.UI.RawUI.WindowTitle = '$($svc.Name)'; Set-Location '$dir'; $($svc.Cmd) }"
     Start-Process powershell -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", $expr
     Write-Host "  $($svc.Name.PadRight(15)) -> http://localhost:$($svc.Port)  [new window]"

@@ -1,14 +1,21 @@
 # Apex Nexus — Makefile
-# Cross-platform (Linux / macOS / Windows via Git Bash or WSL).
+# Cross-platform: Linux / macOS / Windows via Git Bash or WSL.
 # Prerequisites: uv >= 0.4, node 20+, ollama
 #
-# Windows native PowerShell users: use scripts/setup.ps1 / dev.ps1 / test-all.ps1
+# Windows native PowerShell: use scripts/setup.ps1 / dev.ps1 / test-all.ps1
 
 .PHONY: help setup setup-rag setup-identity setup-gateway setup-agents setup-portal \
         dev dev-rag dev-identity dev-gateway dev-agents dev-portal \
         test test-rag test-identity test-gateway test-agents \
         lint lint-identity lint-gateway lint-agents \
         build clean
+
+# On Windows Git Bash the venv layout is Scripts/; Unix uses bin/
+ifeq ($(OS),Windows_NT)
+    VENV_BIN := Scripts
+else
+    VENV_BIN := bin
+endif
 
 # ─── Default ─────────────────────────────────────────────────────────────────
 
@@ -18,7 +25,7 @@ help:
 	@echo ""
 	@echo "  Setup"
 	@echo "    setup             Install deps for all services"
-	@echo "    setup-rag         Install apex-rag deps (Python 3.10)"
+	@echo "    setup-rag         Install apex-rag deps (Python 3.11)"
 	@echo "    setup-identity    Install apex-identity deps (Python 3.11)"
 	@echo "    setup-gateway     Install apex-gateway deps (Python 3.11)"
 	@echo "    setup-agents      Install apex-agents deps (Python 3.11)"
@@ -86,16 +93,16 @@ dev:
 	wait
 
 dev-rag:
-	cd services/apex-rag && uv run --no-sync python server.py
+	cd services/apex-rag && .venv/$(VENV_BIN)/python server.py
 
 dev-identity:
-	cd services/apex-identity && uv run --no-sync python -m apex_identity.main
+	cd services/apex-identity && .venv/$(VENV_BIN)/python -m apex_identity.main
 
 dev-gateway:
-	cd services/apex-gateway && uv run --no-sync python server.py
+	cd services/apex-gateway && .venv/$(VENV_BIN)/python server.py
 
 dev-agents:
-	cd services/apex-agents && uv run --no-sync python server.py
+	cd services/apex-agents && .venv/$(VENV_BIN)/python server.py
 
 dev-portal:
 	cd apps/apex-portal && npm run dev
@@ -105,29 +112,29 @@ dev-portal:
 test: test-rag test-identity test-gateway test-agents
 
 test-rag:
-	cd services/apex-rag && uv run --no-sync pytest tests/ -v --tb=short
+	cd services/apex-rag && .venv/$(VENV_BIN)/pytest tests/ -v --tb=short
 
 test-identity:
-	cd services/apex-identity && uv run --no-sync pytest tests/ -v --tb=short
+	cd services/apex-identity && .venv/$(VENV_BIN)/pytest tests/ -v --tb=short
 
 test-gateway:
-	cd services/apex-gateway && uv run --no-sync pytest tests/ -v --tb=short
+	cd services/apex-gateway && .venv/$(VENV_BIN)/pytest tests/ -v --tb=short
 
 test-agents:
-	cd services/apex-agents && uv run --no-sync pytest tests/ -v --tb=short
+	cd services/apex-agents && .venv/$(VENV_BIN)/pytest tests/ -v --tb=short
 
 # ─── Quality ─────────────────────────────────────────────────────────────────
 
 lint: lint-identity lint-gateway lint-agents
 
 lint-identity:
-	cd services/apex-identity && uv run --no-sync ruff check src/ && uv run --no-sync mypy src/
+	cd services/apex-identity && .venv/$(VENV_BIN)/ruff check src/ && .venv/$(VENV_BIN)/mypy src/
 
 lint-gateway:
-	cd services/apex-gateway && uv run --no-sync ruff check src/ && uv run --no-sync mypy src/
+	cd services/apex-gateway && .venv/$(VENV_BIN)/ruff check src/ && .venv/$(VENV_BIN)/mypy src/
 
 lint-agents:
-	cd services/apex-agents && uv run --no-sync ruff check src/ && uv run --no-sync mypy src/
+	cd services/apex-agents && .venv/$(VENV_BIN)/ruff check src/ && .venv/$(VENV_BIN)/mypy src/
 
 # ─── Build ───────────────────────────────────────────────────────────────────
 
@@ -135,7 +142,7 @@ build:
 	cd apps/apex-portal && npm run build
 
 # ─── Clean ───────────────────────────────────────────────────────────────────
-# Uses Python for the recursive cache-deletion so it works on Windows too.
+# Uses Python one-liners for recursive cache deletion — works on Windows too.
 
 clean:
 	-rm -rf services/apex-rag/.venv

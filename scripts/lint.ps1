@@ -50,11 +50,11 @@ foreach ($svc in $targets) {
     $ok = $true
 
     Write-Host "  ruff check src/" -ForegroundColor DarkGray
-    uv run --no-sync ruff check src/
+    & ".venv\Scripts\ruff" check src/
     if ($LASTEXITCODE -ne 0) { $ok = $false }
 
     Write-Host "  mypy src/" -ForegroundColor DarkGray
-    uv run --no-sync mypy src/
+    & ".venv\Scripts\mypy" src/
     if ($LASTEXITCODE -ne 0) { $ok = $false }
 
     Pop-Location

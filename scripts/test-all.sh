@@ -23,10 +23,10 @@ run_tests() {
   fi
 }
 
-run_tests "apex-rag"      "services/apex-rag"      "uv run --no-sync pytest tests/ -v --tb=short"
-run_tests "apex-identity" "services/apex-identity" "uv run --no-sync pytest tests/ -v --tb=short"
-run_tests "apex-gateway"  "services/apex-gateway"  "uv run --no-sync pytest tests/ -v --tb=short"
-run_tests "apex-agents"   "services/apex-agents"   "uv run --no-sync pytest tests/ -v --tb=short"
+run_tests "apex-rag"      "services/apex-rag"      ".venv/bin/pytest tests/ -v --tb=short"
+run_tests "apex-identity" "services/apex-identity" ".venv/bin/pytest tests/ -v --tb=short"
+run_tests "apex-gateway"  "services/apex-gateway"  ".venv/bin/pytest tests/ -v --tb=short"
+run_tests "apex-agents"   "services/apex-agents"   ".venv/bin/pytest tests/ -v --tb=short"
 
 echo ""
 echo "━━━ SUMMARY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
