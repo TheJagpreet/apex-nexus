@@ -2,7 +2,7 @@
 Ollama LLM integration — wraps the ollama Python client into a simple callable.
 
 Usage:
-    llm = OllamaLLM(model="gemma4:e4b")
+    llm = OllamaLLM(model="gemma4:e2b")
     answer = llm("Your prompt here")
 """
 from __future__ import annotations
@@ -17,7 +17,7 @@ class OllamaLLM:
     Callable wrapper around the Ollama Python SDK.
 
     Args:
-        model:   Model name as listed in `ollama list`, e.g. "gemma4:e4b".
+        model:   Model name as listed in `ollama list`, e.g. "gemma4:e2b".
         host:    Ollama server URL (default: http://localhost:11434).
         options: Extra Ollama generate options (temperature, top_p, etc.).
     """

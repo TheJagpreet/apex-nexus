@@ -7,6 +7,7 @@ requires-python = ">=3.11"
 license = { text = "MIT" }
 
 dependencies = [
+    "apex-logging @ file:../../packages/apex-logging",
     "fastapi>=0.115.0,<1.0.0",
     "uvicorn[standard]>=0.32.0,<1.0.0",
     "sqlalchemy>=2.0.0,<3.0.0",

@@ -13,6 +13,7 @@ Multi-service RAG platform — five independently deployable services in one rep
 | `services/apex-gateway` | Python 3.11+ | 8002 | Thin Ollama LLM wrapper |
 | `services/apex-agents` | Python 3.11+ | 8003 | Agent registry + LangGraph execution + SSE |
 | `apps/apex-portal` | React 18 + Vite | 5173 | Full-stack chat UI |
+| `packages/apex-logging` | Python 3.11+ | — | Shared structured logging + OpenTelemetry (installed as path dep) |
 
 ## Commands
 
@@ -84,6 +85,12 @@ apps/apex-portal
 UI decisions (colors, typography, spacing) → [docs/DESIGN.md](docs/DESIGN.md).
 Every UI change must reference this file.
 
+## Logging
+
+All Python services use `packages/apex-logging` for structured logging. See [docs/LOGGING.md](docs/LOGGING.md) for field reference, JSON format, and OTel/Jaeger setup.
+
+Key env vars (all services): `APEX_LOG_FORMAT` (console|json), `APEX_LOG_LEVEL`, `APEX_LOG_OTLP_ENDPOINT`.
+
 ## Per-Service Instructions
 
 Each service has its own `CLAUDE.md` with service-specific guidance:
@@ -92,6 +99,7 @@ Each service has its own `CLAUDE.md` with service-specific guidance:
 - `services/apex-gateway/CLAUDE.md`
 - `services/apex-agents/CLAUDE.md`
 - `apps/apex-portal/CLAUDE.md`
+- `packages/apex-logging/CLAUDE.md`
 
 ## Environment
 

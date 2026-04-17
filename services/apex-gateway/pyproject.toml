@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "LLM generation gateway for the Apex platform (Ollama backend)"
 requires-python = ">=3.11"
 dependencies = [
+    "apex-logging @ file:../../packages/apex-logging",
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
     "ollama>=0.3.0",

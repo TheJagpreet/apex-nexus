@@ -5,8 +5,11 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+from apex_logging import RequestLoggingMiddleware, configure_logging, instrument_app
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+configure_logging("apex-identity")
 
 from apex_identity.config import settings
 from apex_identity.database import engine
@@ -37,6 +40,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestLoggingMiddleware)
+instrument_app(app)
 
 app.include_router(auth.router)
 app.include_router(sessions.router)

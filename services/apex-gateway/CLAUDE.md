@@ -42,4 +42,4 @@ Minimal — two source files:
 
 Copy `.env.example` → `.env`. Key vars:
 - `APEX_GW_OLLAMA_HOST` — Ollama server URL (default: `http://localhost:11434`)
-- `APEX_GW_OLLAMA_MODEL` — model to use (default: `gemma4:e4b`)
+- `APEX_GW_OLLAMA_MODEL` — model to use (default: `gemma4:e2b`)

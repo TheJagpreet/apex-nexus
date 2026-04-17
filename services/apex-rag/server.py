@@ -22,7 +22,6 @@ Run (from inside apex-rag/ with venv active):
 from __future__ import annotations
 
 import json
-import logging
 import os
 import shutil
 import tempfile
@@ -33,13 +32,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
+from apex_logging import RequestLoggingMiddleware, configure_logging, get_logger, instrument_app
 from apex_rag import RAGPipeline
 from apex_rag.config import Settings
 from apex_rag.ingestion.loaders import load_csv, load_file
 from apex_rag.vectorstore.collection_manager import CollectionManager
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+configure_logging("apex-rag")
+logger = get_logger(__name__)
 
 # ---------------------------------------------------------------------------
 # App
@@ -58,6 +58,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestLoggingMiddleware)
+instrument_app(app)
 
 ACCEPTED_SUFFIXES = {".txt", ".md", ".pdf", ".html", ".htm", ".csv"}
 

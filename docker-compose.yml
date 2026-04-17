@@ -15,6 +15,9 @@ services:
       APEX_RAG_COLLECTION: ${APEX_RAG_COLLECTION:-apex_default}
       APEX_RAG_CHUNK_SIZE: ${APEX_RAG_CHUNK_SIZE:-512}
       APEX_RAG_CHUNK_OVERLAP: ${APEX_RAG_CHUNK_OVERLAP:-64}
+      APEX_LOG_FORMAT: ${APEX_LOG_FORMAT:-json}
+      APEX_LOG_LEVEL: ${APEX_LOG_LEVEL:-INFO}
+      APEX_LOG_OTLP_ENDPOINT: ${APEX_LOG_OTLP_ENDPOINT:-}
     volumes:
       - rag_data:/data
     depends_on:
@@ -40,6 +43,9 @@ services:
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
       HOST: 0.0.0.0
       PORT: 8001
+      APEX_LOG_FORMAT: ${APEX_LOG_FORMAT:-json}
+      APEX_LOG_LEVEL: ${APEX_LOG_LEVEL:-INFO}
+      APEX_LOG_OTLP_ENDPOINT: ${APEX_LOG_OTLP_ENDPOINT:-}
     volumes:
       - identity_data:/data
     restart: unless-stopped
@@ -58,9 +64,12 @@ services:
       - "8002:8002"
     environment:
       APEX_GW_OLLAMA_HOST: http://ollama:11434
-      APEX_GW_OLLAMA_MODEL: ${APEX_GW_OLLAMA_MODEL:-gemma4:e4b}
+      APEX_GW_OLLAMA_MODEL: ${APEX_GW_OLLAMA_MODEL:-gemma4:e2b}
       APEX_GW_HOST: 0.0.0.0
       APEX_GW_PORT: 8002
+      APEX_LOG_FORMAT: ${APEX_LOG_FORMAT:-json}
+      APEX_LOG_LEVEL: ${APEX_LOG_LEVEL:-INFO}
+      APEX_LOG_OTLP_ENDPOINT: ${APEX_LOG_OTLP_ENDPOINT:-}
     depends_on:
       - ollama
     restart: unless-stopped
@@ -84,8 +93,11 @@ services:
       APEX_AGENTS_GATEWAY_URL: http://apex-gateway:8002
       APEX_AGENTS_RAG_URL: http://apex-rag:8000
       APEX_AGENTS_OLLAMA_HOST: http://ollama:11434
-      APEX_AGENTS_OLLAMA_MODEL: ${APEX_AGENTS_OLLAMA_MODEL:-gemma4:e4b}
+      APEX_AGENTS_OLLAMA_MODEL: ${APEX_AGENTS_OLLAMA_MODEL:-gemma4:e2b}
       APEX_AGENTS_CORS_ORIGINS: ${APEX_AGENTS_CORS_ORIGINS:-http://localhost:5173}
+      APEX_LOG_FORMAT: ${APEX_LOG_FORMAT:-json}
+      APEX_LOG_LEVEL: ${APEX_LOG_LEVEL:-INFO}
+      APEX_LOG_OTLP_ENDPOINT: ${APEX_LOG_OTLP_ENDPOINT:-}
     volumes:
       - agents_data:/data
     depends_on:
@@ -134,6 +146,20 @@ services:
     #         - driver: nvidia
     #           count: 1
     #           capabilities: [gpu]
+
+  # ─── jaeger (optional observability) ──────────────────────────────────────
+  # Start with: docker compose --profile observability up
+  # UI: http://localhost:16686
+  # To send traces: set APEX_LOG_OTLP_ENDPOINT=http://localhost:4318
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    profiles: [observability]
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4318:4318"     # OTLP HTTP receiver
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    restart: unless-stopped
 
 volumes:
   rag_data:

@@ -1,5 +1,5 @@
 """
-Live end-to-end test — all Phase 2 features + Ollama gemma4:e4b.
+Live end-to-end test — all Phase 2 features + Ollama gemma4:e2b.
 
 Run:
     python examples/ollama_e2e.py
@@ -32,7 +32,7 @@ cfg = Settings(
     embed_cache_dir=f"{tmpdir}/emb_cache",
     dedup=True,
     dedup_store_dir=f"{tmpdir}/dedup",
-    ollama_model="gemma4:e4b",
+    ollama_model="gemma4:e2b",
     ollama_host="http://localhost:11434",
 )
 
@@ -102,7 +102,7 @@ questions = [
     "Explain how RAG works step by step.",
 ]
 
-print("\n-- Querying (hybrid search + reranking + Ollama gemma4:e4b) ----------\n")
+print("\n-- Querying (hybrid search + reranking + Ollama gemma4:e2b) ----------\n")
 
 for q in questions:
     result = rag.query(q)

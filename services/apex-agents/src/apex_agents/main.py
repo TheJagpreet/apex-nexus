@@ -20,8 +20,9 @@ Endpoints:
 from __future__ import annotations
 
 import json
-import logging
 from contextlib import asynccontextmanager
+
+from apex_logging import RequestLoggingMiddleware, configure_logging, get_logger, instrument_app
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -57,8 +58,8 @@ from .schemas import (
 )
 from .seed import seed_builtin_agents
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+configure_logging("apex-agents")
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
@@ -87,6 +88,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestLoggingMiddleware)
+instrument_app(app)
 
 
 # ---------------------------------------------------------------------------

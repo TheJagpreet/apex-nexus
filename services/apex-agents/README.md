@@ -22,7 +22,7 @@ uv pip install -e ".[dev]"
 Requires [Ollama](https://ollama.com/) running locally with the configured model:
 
 ```bash
-ollama pull gemma4:e4b
+ollama pull gemma4:e2b
 ollama serve
 ```
 
@@ -39,7 +39,7 @@ APEX_AGENTS_DB_URL=sqlite:///./apex_agents.db
 APEX_AGENTS_GATEWAY_URL=http://localhost:8002
 APEX_AGENTS_RAG_URL=http://localhost:8000
 APEX_AGENTS_OLLAMA_HOST=http://localhost:11434
-APEX_AGENTS_OLLAMA_MODEL=gemma4:e4b
+APEX_AGENTS_OLLAMA_MODEL=gemma4:e2b
 APEX_AGENTS_CORS_ORIGINS=http://localhost:5173
 ```
 

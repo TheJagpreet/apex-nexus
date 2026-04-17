@@ -81,7 +81,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full deep-dive, and [do
 
 ```bash
 # Pull the required Ollama models before starting services
-ollama pull gemma4:e4b
+ollama pull gemma4:e2b
 ollama pull nomic-embed-text
 ```
 
@@ -255,7 +255,7 @@ Key variables to set before first run:
 |----------|---------|-------------|
 | `SECRET_KEY` | apex-identity | JWT signing key — generate with `python -c "import secrets; print(secrets.token_urlsafe(64))"` |
 | `APEX_RAG_EMBED_BACKEND` | apex-rag | `ollama` (default) or `local` (sentence-transformers) |
-| `APEX_GW_OLLAMA_MODEL` | apex-gateway | Ollama model name, e.g. `gemma4:e4b` |
+| `APEX_GW_OLLAMA_MODEL` | apex-gateway | Ollama model name, e.g. `gemma4:e2b` |
 | `APEX_AGENTS_OLLAMA_MODEL` | apex-agents | Ollama model for agent runs |
 
 ---

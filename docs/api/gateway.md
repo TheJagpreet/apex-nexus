@@ -32,7 +32,7 @@ The gateway assembles the RAG instruction prompt internally:
 {
   "question": "What is RAG?",
   "answer": "RAG (Retrieval-Augmented Generation) is a technique that...",
-  "model": "gemma4:e4b"
+  "model": "gemma4:e2b"
 }
 ```
 
@@ -63,6 +63,6 @@ Useful for refining vague questions before sending to apex-rag.
 | Env Var | Default | Description |
 |---------|---------|-------------|
 | `APEX_GW_OLLAMA_HOST` | `http://localhost:11434` | Ollama server URL |
-| `APEX_GW_OLLAMA_MODEL` | `gemma4:e4b` | Model for generation |
+| `APEX_GW_OLLAMA_MODEL` | `gemma4:e2b` | Model for generation |
 | `APEX_GW_HOST` | `0.0.0.0` | Bind address |
 | `APEX_GW_PORT` | `8002` | Listen port |

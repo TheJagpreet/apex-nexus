@@ -7,8 +7,7 @@ Endpoints:
 """
 from __future__ import annotations
 
-import logging
-
+from apex_logging import RequestLoggingMiddleware, configure_logging, get_logger, instrument_app
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -16,8 +15,8 @@ from pydantic import BaseModel, Field
 from .config import settings
 from .llm.ollama_llm import OllamaLLM
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+configure_logging("apex-gateway")
+logger = get_logger(__name__)
 
 app = FastAPI(
     title="Apex Gateway API",
@@ -32,6 +31,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RequestLoggingMiddleware)
+instrument_app(app)
 
 _llm: OllamaLLM | None = None
 
