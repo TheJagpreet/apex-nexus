@@ -22,10 +22,10 @@ $ErrorActionPreference = 'Stop'
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
 $allServices = @(
-    @{ Name = 'apex-rag';      Key = 'rag';      Dir = 'services\apex-rag';      Cmd = 'uv run python server.py';             Port = 8000 }
-    @{ Name = 'apex-identity'; Key = 'identity'; Dir = 'services\apex-identity'; Cmd = 'uv run python -m apex_identity.main'; Port = 8001 }
-    @{ Name = 'apex-gateway';  Key = 'gateway';  Dir = 'services\apex-gateway';  Cmd = 'uv run python server.py';             Port = 8002 }
-    @{ Name = 'apex-agents';   Key = 'agents';   Dir = 'services\apex-agents';   Cmd = 'uv run python server.py';             Port = 8003 }
+    @{ Name = 'apex-rag';      Key = 'rag';      Dir = 'services\apex-rag';      Cmd = 'uv run --no-sync python server.py';             Port = 8000 }
+    @{ Name = 'apex-identity'; Key = 'identity'; Dir = 'services\apex-identity'; Cmd = 'uv run --no-sync python -m apex_identity.main'; Port = 8001 }
+    @{ Name = 'apex-gateway';  Key = 'gateway';  Dir = 'services\apex-gateway';  Cmd = 'uv run --no-sync python server.py';             Port = 8002 }
+    @{ Name = 'apex-agents';   Key = 'agents';   Dir = 'services\apex-agents';   Cmd = 'uv run --no-sync python server.py';             Port = 8003 }
     @{ Name = 'apex-portal';   Key = 'portal';   Dir = 'apps\apex-portal';       Cmd = 'npm run dev';                         Port = 5173 }
 )
 

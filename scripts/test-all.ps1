@@ -49,7 +49,7 @@ foreach ($suite in $targets) {
     Write-Host ("━" * 60) -ForegroundColor DarkGray
 
     Push-Location $dir
-    uv run pytest tests/ -v --tb=short
+    uv run --no-sync pytest tests/ -v --tb=short
     if ($LASTEXITCODE -eq 0) {
         $pass += $suite.Name
     } else {

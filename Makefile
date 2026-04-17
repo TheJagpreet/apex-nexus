@@ -86,16 +86,16 @@ dev:
 	wait
 
 dev-rag:
-	cd services/apex-rag && uv run python server.py
+	cd services/apex-rag && uv run --no-sync python server.py
 
 dev-identity:
-	cd services/apex-identity && uv run python -m apex_identity.main
+	cd services/apex-identity && uv run --no-sync python -m apex_identity.main
 
 dev-gateway:
-	cd services/apex-gateway && uv run python server.py
+	cd services/apex-gateway && uv run --no-sync python server.py
 
 dev-agents:
-	cd services/apex-agents && uv run python server.py
+	cd services/apex-agents && uv run --no-sync python server.py
 
 dev-portal:
 	cd apps/apex-portal && npm run dev
@@ -105,29 +105,29 @@ dev-portal:
 test: test-rag test-identity test-gateway test-agents
 
 test-rag:
-	cd services/apex-rag && uv run pytest tests/ -v --tb=short
+	cd services/apex-rag && uv run --no-sync pytest tests/ -v --tb=short
 
 test-identity:
-	cd services/apex-identity && uv run pytest tests/ -v --tb=short
+	cd services/apex-identity && uv run --no-sync pytest tests/ -v --tb=short
 
 test-gateway:
-	cd services/apex-gateway && uv run pytest tests/ -v --tb=short
+	cd services/apex-gateway && uv run --no-sync pytest tests/ -v --tb=short
 
 test-agents:
-	cd services/apex-agents && uv run pytest tests/ -v --tb=short
+	cd services/apex-agents && uv run --no-sync pytest tests/ -v --tb=short
 
 # ─── Quality ─────────────────────────────────────────────────────────────────
 
 lint: lint-identity lint-gateway lint-agents
 
 lint-identity:
-	cd services/apex-identity && uv run ruff check src/ && uv run mypy src/
+	cd services/apex-identity && uv run --no-sync ruff check src/ && uv run --no-sync mypy src/
 
 lint-gateway:
-	cd services/apex-gateway && uv run ruff check src/ && uv run mypy src/
+	cd services/apex-gateway && uv run --no-sync ruff check src/ && uv run --no-sync mypy src/
 
 lint-agents:
-	cd services/apex-agents && uv run ruff check src/ && uv run mypy src/
+	cd services/apex-agents && uv run --no-sync ruff check src/ && uv run --no-sync mypy src/
 
 # ─── Build ───────────────────────────────────────────────────────────────────
 

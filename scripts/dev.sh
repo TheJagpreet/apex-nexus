@@ -16,10 +16,10 @@ trap cleanup EXIT INT TERM
 
 echo "Starting apex-nexus services..."
 
-(cd services/apex-rag      && uv run python server.py)              &
-(cd services/apex-identity && uv run python -m apex_identity.main)  &
-(cd services/apex-gateway  && uv run python server.py)              &
-(cd services/apex-agents   && uv run python server.py)              &
+(cd services/apex-rag      && uv run --no-sync python server.py)              &
+(cd services/apex-identity && uv run --no-sync python -m apex_identity.main)  &
+(cd services/apex-gateway  && uv run --no-sync python server.py)              &
+(cd services/apex-agents   && uv run --no-sync python server.py)              &
 (cd apps/apex-portal       && npm run dev)                           &
 
 echo ""
