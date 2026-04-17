@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     gateway_url: str = "http://localhost:8002"
     rag_url: str = "http://localhost:8000"
     ollama_host: str = "http://localhost:11434"
-    ollama_model: str = "llama3"
+    ollama_model: str = "gemma4:e4b"
     # Stored as a comma-separated string so .env doesn't need JSON syntax.
     # Use .cors_origins_list() wherever a list is needed.
     cors_origins: str = "http://localhost:5173,http://localhost:3000"

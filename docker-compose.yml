@@ -58,7 +58,7 @@ services:
       - "8002:8002"
     environment:
       APEX_GW_OLLAMA_HOST: http://ollama:11434
-      APEX_GW_OLLAMA_MODEL: ${APEX_GW_OLLAMA_MODEL:-llama3}
+      APEX_GW_OLLAMA_MODEL: ${APEX_GW_OLLAMA_MODEL:-gemma4:e4b}
       APEX_GW_HOST: 0.0.0.0
       APEX_GW_PORT: 8002
     depends_on:
@@ -84,7 +84,7 @@ services:
       APEX_AGENTS_GATEWAY_URL: http://apex-gateway:8002
       APEX_AGENTS_RAG_URL: http://apex-rag:8000
       APEX_AGENTS_OLLAMA_HOST: http://ollama:11434
-      APEX_AGENTS_OLLAMA_MODEL: ${APEX_AGENTS_OLLAMA_MODEL:-llama3}
+      APEX_AGENTS_OLLAMA_MODEL: ${APEX_AGENTS_OLLAMA_MODEL:-gemma4:e4b}
       APEX_AGENTS_CORS_ORIGINS: ${APEX_AGENTS_CORS_ORIGINS:-http://localhost:5173}
     volumes:
       - agents_data:/data

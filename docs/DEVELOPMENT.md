@@ -11,7 +11,7 @@
 
 ```bash
 # Pull required Ollama models before first run
-ollama pull llama3
+ollama pull gemma4:e4b
 ollama pull nomic-embed-text
 ```
 

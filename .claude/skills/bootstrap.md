@@ -32,7 +32,7 @@ Complete first-time setup for a new developer on apex-nexus.
 
 4. **Pull Ollama models** (if not already present)
    ```bash
-   ollama pull llama3
+   ollama pull gemma4:e4b
    ollama pull nomic-embed-text
    ```
 

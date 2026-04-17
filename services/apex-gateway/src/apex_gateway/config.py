@@ -15,7 +15,7 @@ class Settings:
         default_factory=lambda: os.getenv("APEX_GW_OLLAMA_HOST", "http://localhost:11434")
     )
     ollama_model: str = field(
-        default_factory=lambda: os.getenv("APEX_GW_OLLAMA_MODEL", "llama3")
+        default_factory=lambda: os.getenv("APEX_GW_OLLAMA_MODEL", "gemma4:e4b")
     )
     host: str = field(default_factory=lambda: os.getenv("APEX_GW_HOST", "0.0.0.0"))
     port: int = field(default_factory=lambda: int(os.getenv("APEX_GW_PORT", "8002")))

@@ -24,7 +24,7 @@ uv pip install -e ".[dev]"
 Requires [Ollama](https://ollama.com/) running locally with a model pulled:
 
 ```bash
-ollama pull llama3
+ollama pull gemma4:e4b
 ollama serve   # starts on http://localhost:11434
 ```
 
@@ -34,7 +34,7 @@ Create `.env` in `apex-gateway/`:
 
 ```
 APEX_GW_OLLAMA_HOST=http://localhost:11434
-APEX_GW_OLLAMA_MODEL=llama3
+APEX_GW_OLLAMA_MODEL=gemma4:e4b
 APEX_GW_HOST=0.0.0.0
 APEX_GW_PORT=8002
 APEX_GW_CORS_ORIGINS=http://localhost:5173,http://localhost:3000
@@ -53,7 +53,7 @@ python -m uvicorn server:app --reload --port 8002
 
 ### `GET /health`
 ```json
-{"status": "ok", "model": "llama3"}
+{"status": "ok", "model": "gemma4:e4b"}
 ```
 
 ### `POST /generate`
@@ -69,7 +69,7 @@ Response:
 {
   "question": "What is ChromaDB?",
   "answer": "ChromaDB is an open-source vector database...",
-  "model": "llama3"
+  "model": "gemma4:e4b"
 }
 ```
 
