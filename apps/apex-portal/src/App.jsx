@@ -335,12 +335,10 @@ function ChatView() {
         }
       }
 
-      // Auto-title: extract keywords then cap to 5 words
+      // Auto-title: first 5 words of the user's message
       if (isNewSession && userContent) {
-        const toTitle = str => str.trim().split(/\s+/).slice(0, 5).join(' ')
-        extractKeywords(userContent.slice(0, 300))
-          .then(r => renameSession(sessionId, toTitle(r.keywords || userContent)))
-          .catch(() => renameSession(sessionId, toTitle(userContent)))
+        const title = userContent.trim().split(/\s+/).slice(0, 5).join(' ')
+        renameSession(sessionId, title)
       }
     } catch (err) {
       addLocalMessage({ role: 'error', content: err.message || 'Something went wrong.' })

@@ -223,15 +223,15 @@ def seed_builtin_agents(db: Session) -> None:
     if stale:
         db.commit()
 
-    # ── Insert missing built-ins ──────────────────────────────────────────
-    seeded = 0
+    # ── Insert / sync built-ins ───────────────────────────────────────────
+    seeded = updated = 0
     for defn in BUILTIN_AGENTS:
         existing = db.query(Agent).filter(Agent.id == defn.id).first()
         if existing:
-            # Keep built-in agents in sync with seed definitions
             existing.system_prompt = defn.system_prompt
             existing.tools = defn.tools
             existing.description = defn.description
+            updated += 1
             continue
 
         agent = Agent(
@@ -247,6 +247,9 @@ def seed_builtin_agents(db: Session) -> None:
         db.add(agent)
         seeded += 1
 
-    if seeded:
+    if seeded or updated:
         db.commit()
+    if seeded:
         logger.info("Seeded %d built-in agent(s)", seeded)
+    if updated:
+        logger.info("Synced %d built-in agent(s)", updated)
