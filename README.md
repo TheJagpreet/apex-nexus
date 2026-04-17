@@ -1,6 +1,5 @@
 # Apex Nexus
 
-[![CI](https://github.com/TheJagpreet/apex-nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/TheJagpreet/apex-nexus/actions/workflows/ci.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Node 20+](https://img.shields.io/badge/node-20%2B-green.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
@@ -234,7 +233,6 @@ apex-nexus/
 │   ├── setup.sh / setup.ps1    Install all deps
 │   ├── dev.sh   / dev.ps1      Start all services
 │   └── test-all.sh / test-all.ps1  Run all test suites
-├── .github/workflows/ci.yml    GitHub Actions CI
 ├── .gitattributes              Cross-platform line-ending config
 ├── docker-compose.yml          Full-stack container orchestration
 ├── Makefile                    Developer convenience targets
