@@ -4,6 +4,7 @@ const KB_MIN = 140
 const KB_MAX = 380
 const KB_DEFAULT = 220
 import { createCollection, deleteCollection, deleteFile, ingestToCollection, listCollections, listFiles } from '../api/rag'
+import IngestOverlay from '../components/IngestOverlay'
 
 function FolderIcon() {
   return (
@@ -46,6 +47,8 @@ export default function KnowledgeBasePage() {
   const [showNewFolder, setShowNewFolder] = useState(false)
   const [uploads, setUploads] = useState([]) // { id, filename, stage, progress }
   const [dragging, setDragging] = useState(false)
+  // Ingest overlay state
+  const [ingestOverlay, setIngestOverlay] = useState({ visible: false, stage: null, filename: null })
   const fileInputRef = useRef(null)
   const [folderWidth, setFolderWidth] = useState(() => {
     const s = localStorage.getItem('apex_kb_folder_width')
@@ -149,6 +152,8 @@ export default function KnowledgeBasePage() {
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i]
       const uploadId = newUploads[i].id
+      // Show ingest overlay
+      setIngestOverlay({ visible: true, stage: 'loading', filename: file.name })
       try {
         await ingestToCollection(selected, file, event => {
           setUploads(prev => prev.map(u =>
@@ -156,6 +161,8 @@ export default function KnowledgeBasePage() {
               ? { ...u, stage: event.stage, progress: event.progress ?? u.progress }
               : u
           ))
+          // Update overlay stage
+          setIngestOverlay({ visible: true, stage: event.stage, filename: file.name })
         })
         await loadFiles(selected)
         await loadCollections()
@@ -163,8 +170,14 @@ export default function KnowledgeBasePage() {
         setUploads(prev => prev.map(u =>
           u.id === uploadId ? { ...u, stage: 'error', progress: 0 } : u
         ))
+        setIngestOverlay({ visible: true, stage: 'error', filename: file.name })
       }
     }
+
+    // Hide overlay after short delay
+    setTimeout(() => {
+      setIngestOverlay({ visible: false, stage: null, filename: null })
+    }, 1500)
 
     // Clear completed/errored uploads after 3s
     setTimeout(() => {
@@ -180,6 +193,13 @@ export default function KnowledgeBasePage() {
 
   return (
     <div className="kb-page">
+      {/* DNA Transcription ingest overlay */}
+      <IngestOverlay
+        stage={ingestOverlay.stage}
+        filename={ingestOverlay.filename}
+        visible={ingestOverlay.visible}
+      />
+
       {/* Left: folder list */}
       <aside className="kb-folders" style={{ width: folderWidth }}>
         <div className="kb-folders__header">

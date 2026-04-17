@@ -140,6 +140,8 @@ body {
   font-weight: 700;
   line-height: 1.5;
   text-align: center;
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(0, 255, 200, 0.3), 0 0 40px rgba(0, 255, 200, 0.1);
 }
 
 .auth-form {
@@ -188,8 +190,8 @@ body {
 }
 
 .auth-btn {
-  background: var(--text);
-  color: var(--bg);
+  background: var(--accent);
+  color: #080c10;
   border: none;
   border-radius: var(--radius);
   padding: 10px 20px;
@@ -197,7 +199,8 @@ body {
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: opacity 0.1s;
+  transition: opacity 0.1s, box-shadow 0.2s;
+  box-shadow: var(--glow-cyan-sm);
 }
 
 .auth-btn:hover:not(:disabled) { opacity: 0.8; }
@@ -213,6 +216,7 @@ body {
   color: var(--accent);
   text-decoration: underline 1px;
   text-underline-offset: 2px;
+  text-shadow: 0 0 8px rgba(0, 255, 200, 0.15);
 }
 
 /* -----------------------------------------------------------------------
@@ -246,7 +250,8 @@ body {
   padding: 0;
   cursor: pointer;
   font-family: var(--font);
-  color: var(--text);
+  color: var(--accent);
+  text-shadow: 0 0 12px rgba(0, 255, 200, 0.2);
   text-align: left;
 }
 
@@ -384,7 +389,8 @@ body {
 .sidebar__resize-handle:hover,
 .sidebar__resize-handle:active {
   background: var(--accent);
-  opacity: 0.4;
+  opacity: 0.5;
+  box-shadow: 0 0 6px rgba(0, 255, 200, 0.2);
 }
 
 /* -----------------------------------------------------------------------
@@ -525,8 +531,8 @@ body {
 
 .chat-bar__send {
   flex-shrink: 0;
-  background: var(--text);
-  color: var(--bg);
+  background: var(--accent);
+  color: #080c10;
   border: none;
   cursor: pointer;
   padding: 8px;
@@ -534,7 +540,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.1s;
+  transition: opacity 0.1s, box-shadow 0.2s;
+  box-shadow: var(--glow-cyan-sm);
 }
 
 .chat-bar__send:hover:not(:disabled) { opacity: 0.75; }
