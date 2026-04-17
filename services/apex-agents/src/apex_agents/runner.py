@@ -241,8 +241,11 @@ def _html_to_text(html: str) -> str:
     return "\n\n".join(parts)
 
 
-async def _exec_web_fetch(inp: dict) -> str:
-    url = inp.get("url", "")
+async def _exec_web_fetch(inp: dict | str) -> str:
+    if isinstance(inp, str):
+        url = inp
+    else:
+        url = inp.get("url", "")
     if not url:
         return "[error: no url provided]"
     async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
