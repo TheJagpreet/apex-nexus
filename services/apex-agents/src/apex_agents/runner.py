@@ -270,33 +270,21 @@ async def _exec_web_search(inp: dict | str) -> str:
     query = inp if isinstance(inp, str) else inp.get("query", inp.get("q", ""))
     if not query:
         return "[error: no query provided]"
-    async with httpx.AsyncClient(timeout=15, follow_redirects=True) as client:
-        try:
-            r = await client.get(
-                "https://lite.duckduckgo.com/lite/",
-                params={"q": query},
-                headers={
-                    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0",
-                    "Accept": "text/html,*/*",
-                },
-            )
-            r.raise_for_status()
-            html = r.text
-            # DDG Lite: result links inside <a class="result-link"> or <td> links, snippets in result-snippet
-            link_re = re.compile(r'<a[^>]+href="(https?://[^"]+)"[^>]*>([^<]+)</a>', re.IGNORECASE)
-            snippet_re = re.compile(r'class="result-snippet"[^>]*>([\s\S]*?)</td>', re.IGNORECASE)
-            links = [(m.group(1), m.group(2).strip()) for m in link_re.finditer(html)
-                     if not m.group(1).startswith("https://lite.duckduckgo")]
-            snippets = [re.sub(r"<[^>]+>", "", s).strip() for s in snippet_re.findall(html)]
-            if not links:
-                return f"[No results found for '{query}']"
-            parts = []
-            for i, (url, title) in enumerate(links[:5]):
-                snippet = snippets[i] if i < len(snippets) else ""
-                parts.append(f"{i + 1}. {title}\n   {url}\n   {snippet}")
-            return "\n\n".join(parts)
-        except Exception as exc:
-            return f"[web_search error: {exc}]"
+    try:
+        from duckduckgo_search import DDGS
+        loop = asyncio.get_event_loop()
+        results = await loop.run_in_executor(
+            None,
+            lambda: list(DDGS().text(query, max_results=5)),
+        )
+        if not results:
+            return f"[No results found for '{query}']"
+        parts = []
+        for i, r in enumerate(results):
+            parts.append(f"{i + 1}. {r.get('title', '')}\n   {r.get('href', '')}\n   {r.get('body', '')}")
+        return "\n\n".join(parts)
+    except Exception as exc:
+        return f"[web_search error: {exc}]"
 
 
 # ---------------------------------------------------------------------------
