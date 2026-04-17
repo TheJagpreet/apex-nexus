@@ -1,82 +1,51 @@
 /**
- * ScrambledText — shows incoming text with a scrambled "decoding" effect.
- * Characters that haven't settled yet show random symbols, creating the
- * illusion of an LLM generating meaning from randomness.
+ * ScrambledText — settled text + a window of randomly flickering glyphs at the frontier.
+ * Creates the illusion of an LLM generating meaning out of randomness.
+ *
+ * Props:
+ *   text        — the settled text so far (grows as tokens arrive)
+ *   lookahead   — how many scrambled chars to show past the settled frontier (default 5)
+ *   streaming   — set false when stream is complete to drop the lookahead (default true)
+ *   className
  */
 import { useEffect, useRef, useState } from 'react'
 
-const GLYPHS = '░▒▓█▀▄▌▐│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌αβγδεζηθλμξπσφψω∂∆∑∏∫≈≠≤≥⊕⊗⊂⊃∈∉∀∃¿¬¶§†‡°•◊※⌘⌥⏎⌫✦✧❖⟐⟑⬡⬢⎔⎕⌬'
+const GLYPHS = '░▒▓█▀▄▌▐│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌αβγδεζηθλμξπσφψω∂∆∑∏∫≈≠≤≥⊕⊗⊂⊃∈∉∀∃¿¬¶§†‡°•◊※⌘⌥⏎⌫✦✧❖⟐⟑⬡⬢⎔⎕⌬01010110100101'
 
-const ASSUMED_FRAME_DURATION_MS = 16
-
-function getRandomGlyph() {
+function rand() {
   return GLYPHS[Math.floor(Math.random() * GLYPHS.length)]
 }
 
-export default function ScrambledText({ text, scrambleDuration = 60, className = '' }) {
-  const [displayed, setDisplayed] = useState('')
-  const prevLenRef = useRef(0)
-  const settledRef = useRef(0)
-  const frameRef = useRef(null)
-  const scrambleMapRef = useRef(new Map()) // index -> { target, remaining }
+export default function ScrambledText({ text = '', lookahead = 5, streaming = true, className = '' }) {
+  const [displayed, setDisplayed] = useState(text)
+  const rafRef = useRef(null)
+  const textRef = useRef(text)
+  const streamingRef = useRef(streaming)
+
+  // Update refs synchronously during render so the rAF tick always reads the
+  // latest values (useEffect would be one paint too late).
+  textRef.current = text
+  streamingRef.current = streaming
 
   useEffect(() => {
-    if (!text) {
-      setDisplayed('')
-      prevLenRef.current = 0
-      settledRef.current = 0
-      scrambleMapRef.current.clear()
-      return
-    }
-
-    const prevLen = prevLenRef.current
-    const newLen = text.length
-
-    // Mark newly arrived characters for scrambling
-    for (let i = prevLen; i < newLen; i++) {
-      // scrambleDuration in ms per character, converted to frames (~16ms each)
-      const frames = Math.max(2, Math.floor(scrambleDuration / ASSUMED_FRAME_DURATION_MS))
-      scrambleMapRef.current.set(i, { target: text[i], remaining: frames })
-    }
-    prevLenRef.current = newLen
-
     function tick() {
-      const map = scrambleMapRef.current
-      const chars = text.split('')
-
-      let anyActive = false
-      for (const [idx, entry] of map.entries()) {
-        if (entry.remaining > 0) {
-          chars[idx] = getRandomGlyph()
-          entry.remaining--
-          anyActive = true
-        } else {
-          chars[idx] = entry.target
-          // Don't delete — keep for reference
-        }
-      }
-
-      setDisplayed(chars.join(''))
-
-      if (anyActive) {
-        frameRef.current = requestAnimationFrame(tick)
+      const t = textRef.current
+      const s = streamingRef.current
+      if (s && t.length > 0) {
+        // settled text + lookahead random chars flickering at the frontier
+        const extra = Array.from({ length: lookahead }, rand).join('')
+        setDisplayed(t + extra)
       } else {
-        // Clean settled entries
-        for (const [idx, entry] of map.entries()) {
-          if (entry.remaining <= 0) {
-            settledRef.current = Math.max(settledRef.current, idx + 1)
-          }
-        }
+        setDisplayed(t)
       }
+      rafRef.current = requestAnimationFrame(tick)
     }
 
-    if (frameRef.current) cancelAnimationFrame(frameRef.current)
-    frameRef.current = requestAnimationFrame(tick)
-
-    return () => {
-      if (frameRef.current) cancelAnimationFrame(frameRef.current)
-    }
-  }, [text, scrambleDuration])
+    if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    rafRef.current = requestAnimationFrame(tick)
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+  // lookahead is stable; only re-mount if it changes
+  }, [lookahead])
 
   return <span className={`scrambled-text ${className}`}>{displayed || text}</span>
 }

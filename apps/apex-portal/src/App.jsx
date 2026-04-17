@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { flushSync } from 'react-dom'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { runAgent } from './api/agents'
 import { extractKeywords, generate } from './api/gateway'
@@ -9,7 +10,7 @@ import MessageBubble from './components/MessageBubble'
 import ScrambledText from './components/ScrambledText'
 import ServiceHealthCheck from './components/ServiceHealthCheck'
 import Sidebar from './components/Sidebar'
-import { MembraneSpinner } from './components/Spinners'
+import { AmoebaSpinner } from './components/Spinners'
 import ThemeToggle from './components/ThemeToggle'
 import { useAuth } from './context/AuthContext'
 import { useSession } from './context/SessionContext'
@@ -29,6 +30,22 @@ function stripToolCalls(text) {
 
 // Duration (ms) for the scrambled-text decode effect on streaming tokens
 const SCRAMBLE_DURATION_MS = 40
+
+// Fake-stream a complete string frame-by-frame.
+// flushSync forces React to paint each chunk immediately — React 18 automatic
+// batching would otherwise collapse all setState calls into one final render.
+function simulateStream(text, onChunk, charsPerFrame = 3) {
+  return new Promise(resolve => {
+    let pos = 0
+    const tick = () => {
+      pos = Math.min(pos + charsPerFrame, text.length)
+      flushSync(() => onChunk(text.slice(0, pos)))
+      if (pos < text.length) requestAnimationFrame(tick)
+      else resolve()
+    }
+    requestAnimationFrame(tick)
+  })
+}
 
 const THINKING_PHRASES = [
   'Thinking…',
@@ -72,13 +89,32 @@ function ThinkingBubble() {
 function ChatView() {
   const { activeSession, messages, setMessages, createSession, saveMessage, addLocalMessage, renameSession } = useSession()
   const [loading, setLoading] = useState(false)
-  // streamingAgent: { content, agent } | null — live agent response shown while SSE is in flight
+  // streamingAgent: { content, agent } | null — live agent SSE response
   const [streamingAgent, setStreamingAgent] = useState(null)
+  // streamingText: string | null — fake-streamed response for direct/RAG paths
+  const [streamingText, setStreamingText] = useState(null)
   // Active run steps state
   const [runMode, setRunMode] = useState('direct')
   const [runStep, setRunStep] = useState(null)
   const [showRunSteps, setShowRunSteps] = useState(false)
+  // Amoeba idle state: 'visible' | 'exiting' | 'gone'
+  const [amoebaState, setAmoebaState] = useState('visible')
+  const prevMsgLen = useRef(messages.length)
   const bottomRef = useRef(null)
+
+  // Drive amoeba exit when the first message lands, reset on new empty session
+  useEffect(() => {
+    const prev = prevMsgLen.current
+    prevMsgLen.current = messages.length
+    if (prev === 0 && messages.length > 0) {
+      setAmoebaState('exiting')
+      const t = setTimeout(() => setAmoebaState('gone'), 550)
+      return () => clearTimeout(t)
+    }
+    if (messages.length === 0) {
+      setAmoebaState('visible')
+    }
+  }, [messages.length])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -176,10 +212,11 @@ function ChatView() {
               session_id: sessionId,
             })) {
               if (event.type === 'token') {
-                // Hide run steps as soon as we get content
-                if (!streamedAnswer && showRunSteps) setShowRunSteps(false)
-                streamedAnswer += event.content
-                setStreamingAgent({ content: streamedAnswer, agent })
+                flushSync(() => {
+                  if (!streamedAnswer && showRunSteps) setShowRunSteps(false)
+                  streamedAnswer += event.content
+                  setStreamingAgent({ content: streamedAnswer, agent })
+                })
               } else if (event.type === 'tool_use') {
                 setRunStep('tools')
                 toolsCalled.push(event.tool)
@@ -234,8 +271,11 @@ function ChatView() {
           setRunStep('context')
           try {
             setRunStep('generate')
-            setShowRunSteps(false)
             const gen = await generate(userContent, ragResult.context ?? '', history)
+            setShowRunSteps(false)
+            setStreamingText('')
+            await simulateStream(gen.answer, chunk => setStreamingText(chunk))
+            setStreamingText(null)
             answer = gen.answer
           } catch {
             setShowRunSteps(false)
@@ -255,9 +295,12 @@ function ChatView() {
           try { ragResult = await query(userContent) } catch { /* empty */ }
           sources = ragResult.sources ?? []
           setRunStep('generate')
-          setShowRunSteps(false)
           try {
             const gen = await generate(userContent, ragResult.context ?? '', history)
+            setShowRunSteps(false)
+            setStreamingText('')
+            await simulateStream(gen.answer, chunk => setStreamingText(chunk))
+            setStreamingText(null)
             answer = gen.answer
           } catch {
             setShowRunSteps(false)
@@ -270,8 +313,11 @@ function ChatView() {
           setRunStep('context')
           try {
             setRunStep('generate')
-            setShowRunSteps(false)
             const gen = await generate(userContent, '', history)
+            setShowRunSteps(false)
+            setStreamingText('')
+            await simulateStream(gen.answer, chunk => setStreamingText(chunk))
+            setStreamingText(null)
             answer = gen.answer
           } catch {
             setShowRunSteps(false)
@@ -281,9 +327,17 @@ function ChatView() {
         }
       }
 
-      // Auto-title the session from the first message
+      // Auto-title: ask the LLM for a 3-5 word summary; fallback to slice
       if (isNewSession && userContent) {
-        renameSession(sessionId, userContent.slice(0, 60)).catch(() => {})
+        generate(
+          `Give a 3-5 word chat session title for this message. Reply with ONLY the title, no quotes or punctuation: "${userContent.slice(0, 300)}"`,
+          '', []
+        )
+          .then(r => {
+            const title = r.answer?.trim().replace(/^["']|["']$/g, '').slice(0, 60)
+            return renameSession(sessionId, title || userContent.slice(0, 60))
+          })
+          .catch(() => renameSession(sessionId, userContent.slice(0, 60)))
       }
     } catch (err) {
       addLocalMessage({ role: 'error', content: err.message || 'Something went wrong.' })
@@ -299,9 +353,9 @@ function ChatView() {
     <div className="chat-view">
       <div className="messages">
         <div className="messages-inner">
-          {messages.length === 0 && !loading && (
-            <div className="chat-empty-membrane">
-              <MembraneSpinner size={80} />
+          {amoebaState !== 'gone' && (
+            <div className={`chat-empty-membrane${amoebaState === 'exiting' ? ' chat-empty-membrane--exit' : ''}`}>
+              <AmoebaSpinner size={140} />
               <p className="chat-empty-membrane__label">
                 Ask anything. Attach a KB folder to ground answers in your documents.
               </p>
@@ -318,8 +372,22 @@ function ChatView() {
               </div>
             </div>
           )}
-          {loading && !streamingAgent && !showRunSteps && <ThinkingBubble />}
-          {streamingAgent && (
+          {/* Fake-streamed response for direct/RAG paths */}
+          {streamingText !== null && (
+            <div className="message message--assistant">
+              <div className="message__stack">
+                <div className="message__bubble">
+                  {streamingText
+                    ? <ScrambledText text={streamingText} />
+                    : <span className="thinking-label">Generating…</span>}
+                </div>
+              </div>
+            </div>
+          )}
+          {/* ThinkingBubble only as last-resort fallback — should rarely appear */}
+          {loading && !streamingAgent && streamingText === null && !showRunSteps && <ThinkingBubble />}
+          {/* Agent streaming bubble — only render once run steps have faded */}
+          {streamingAgent && !showRunSteps && (
             <div className="message message--assistant">
               <div className="message__stack">
                 <div className="message__context-label">
@@ -331,8 +399,8 @@ function ChatView() {
                 <div className="message__bubble"
                   style={{ '--agent-color': streamingAgent.agent.color, borderColor: streamingAgent.agent.color }}>
                   {stripToolCalls(streamingAgent.content)
-                    ? <ScrambledText text={stripToolCalls(streamingAgent.content)} scrambleDuration={SCRAMBLE_DURATION_MS} />
-                    : <span className="thinking-label">Using tools…</span>}
+                    ? <ScrambledText text={stripToolCalls(streamingAgent.content)} />
+                    : <span className="thinking-label">Generating…</span>}
                 </div>
               </div>
             </div>
