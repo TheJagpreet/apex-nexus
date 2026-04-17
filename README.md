@@ -158,11 +158,14 @@ docker compose down
 
 ## Development
 
+**Unix / Git Bash**
+
 ```bash
 make setup       # Install all deps (runs once per clone)
 make dev         # Start all 5 services in parallel
 make build       # Production build of apex-portal
 make clean       # Remove venvs, node_modules, build artefacts, caches
+make lint        # ruff + mypy on apex-identity, apex-gateway, apex-agents
 ```
 
 Start a single service:
@@ -175,24 +178,58 @@ make dev-agents     # apex-agents    :8003
 make dev-portal     # apex-portal    :5173
 ```
 
+**Windows (PowerShell)**
+
+```powershell
+.\scripts\setup.ps1          # Install all deps
+.\scripts\dev.ps1            # Start all 5 services in parallel
+.\scripts\build.ps1          # Production build of apex-portal
+.\scripts\clean.ps1          # Remove venvs, node_modules, build artefacts, caches
+.\scripts\lint.ps1           # ruff + mypy on apex-identity, apex-gateway, apex-agents
+```
+
+Start a single service:
+
+```powershell
+.\scripts\dev.ps1 -Service rag        # apex-rag       :8000
+.\scripts\dev.ps1 -Service identity   # apex-identity  :8001
+.\scripts\dev.ps1 -Service gateway    # apex-gateway   :8002
+.\scripts\dev.ps1 -Service agents     # apex-agents    :8003
+.\scripts\dev.ps1 -Service portal     # apex-portal    :5173
+```
+
+Lint a single service:
+
+```powershell
+.\scripts\lint.ps1 -Service identity
+.\scripts\lint.ps1 -Service gateway
+.\scripts\lint.ps1 -Service agents
+```
+
 See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for per-service workflows, migration commands, and IDE setup.
 
 ---
 
 ## Testing
 
+**Unix / Git Bash**
+
 ```bash
-make test              # Run all pytest suites
+make test              # All suites
 make test-rag          # apex-rag only
 make test-identity     # apex-identity only
 make test-gateway      # apex-gateway only
 make test-agents       # apex-agents only
 ```
 
-Windows PowerShell:
+**Windows (PowerShell)**
 
 ```powershell
-.\scripts\test-all.ps1
+.\scripts\test-all.ps1                      # All suites
+.\scripts\test-all.ps1 -Service rag         # apex-rag only
+.\scripts\test-all.ps1 -Service identity    # apex-identity only
+.\scripts\test-all.ps1 -Service gateway     # apex-gateway only
+.\scripts\test-all.ps1 -Service agents      # apex-agents only
 ```
 
 All Python tests use `pytest` with `asyncio_mode = "auto"`.  
@@ -230,9 +267,12 @@ apex-nexus/
 ├── docs/                       Architecture, design system, API references
 │   └── api/                    Per-service OpenAPI summaries
 ├── scripts/
-│   ├── setup.sh / setup.ps1    Install all deps
-│   ├── dev.sh   / dev.ps1      Start all services
-│   └── test-all.sh / test-all.ps1  Run all test suites
+│   ├── setup.sh    / setup.ps1      Install all deps
+│   ├── dev.sh      / dev.ps1        Start all (or one) service(s)
+│   ├── test-all.sh / test-all.ps1   Run all (or one) test suite(s)
+│   ├── lint.ps1                     ruff + mypy (PowerShell)
+│   ├── build.ps1                    Production portal build (PowerShell)
+│   └── clean.ps1                    Remove artefacts (PowerShell)
 ├── .gitattributes              Cross-platform line-ending config
 ├── docker-compose.yml          Full-stack container orchestration
 ├── Makefile                    Developer convenience targets

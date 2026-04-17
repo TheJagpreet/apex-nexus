@@ -1,18 +1,17 @@
-# scripts/test-all.ps1 — Run pytest suites (Windows PowerShell).
+# scripts/lint.ps1 — ruff + mypy on Python services (Windows PowerShell).
 #
-# All suites:
-#   .\scripts\test-all.ps1
+# All services:
+#   .\scripts\lint.ps1
 #
-# Single suite:
-#   .\scripts\test-all.ps1 -Service rag
-#   .\scripts\test-all.ps1 -Service identity
-#   .\scripts\test-all.ps1 -Service gateway
-#   .\scripts\test-all.ps1 -Service agents
+# Single service:
+#   .\scripts\lint.ps1 -Service identity
+#   .\scripts\lint.ps1 -Service gateway
+#   .\scripts\lint.ps1 -Service agents
 #
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [ValidateSet('rag', 'identity', 'gateway', 'agents', '')]
+    [ValidateSet('identity', 'gateway', 'agents', '')]
     [string]$Service = ''
 )
 Set-StrictMode -Version Latest
@@ -20,42 +19,47 @@ $ErrorActionPreference = 'Continue'
 
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
-$allSuites = @(
-    @{ Name = 'apex-rag';      Key = 'rag';      Dir = 'services\apex-rag'      }
+$allServices = @(
     @{ Name = 'apex-identity'; Key = 'identity'; Dir = 'services\apex-identity' }
     @{ Name = 'apex-gateway';  Key = 'gateway';  Dir = 'services\apex-gateway'  }
     @{ Name = 'apex-agents';   Key = 'agents';   Dir = 'services\apex-agents'   }
 )
 
 $targets = if ($Service) {
-    $allSuites | Where-Object { $_.Key -eq $Service }
+    $allServices | Where-Object { $_.Key -eq $Service }
 } else {
-    $allSuites
+    $allServices
 }
 
 if (-not $targets) {
-    Write-Error "Unknown service '$Service'. Valid values: rag, identity, gateway, agents"
+    Write-Error "Unknown service '$Service'. Valid values: identity, gateway, agents"
     exit 1
 }
 
 $pass = @()
 $fail = @()
 
-foreach ($suite in $targets) {
-    $dir = Join-Path $RepoRoot $suite.Dir
+foreach ($svc in $targets) {
+    $dir = Join-Path $RepoRoot $svc.Dir
     Write-Host ""
     Write-Host ("━" * 60) -ForegroundColor DarkGray
-    Write-Host "  $($suite.Name)" -ForegroundColor Cyan
+    Write-Host "  $($svc.Name)" -ForegroundColor Cyan
     Write-Host ("━" * 60) -ForegroundColor DarkGray
 
     Push-Location $dir
-    uv run pytest tests/ -v --tb=short
-    if ($LASTEXITCODE -eq 0) {
-        $pass += $suite.Name
-    } else {
-        $fail += $suite.Name
-    }
+    $ok = $true
+
+    Write-Host "  ruff check src/" -ForegroundColor DarkGray
+    uv run ruff check src/
+    if ($LASTEXITCODE -ne 0) { $ok = $false }
+
+    Write-Host "  mypy src/" -ForegroundColor DarkGray
+    uv run mypy src/
+    if ($LASTEXITCODE -ne 0) { $ok = $false }
+
     Pop-Location
+
+    if ($ok) { $pass += $svc.Name } else { $fail += $svc.Name }
 }
 
 Write-Host ""
@@ -68,9 +72,9 @@ foreach ($s in $fail) { Write-Host "  FAIL  $s" -ForegroundColor Red   }
 
 if ($fail.Count -gt 0) {
     Write-Host ""
-    Write-Host "$($fail.Count) suite(s) failed." -ForegroundColor Red
+    Write-Host "$($fail.Count) service(s) failed lint." -ForegroundColor Red
     exit 1
 }
 
 Write-Host ""
-Write-Host "All tests passed." -ForegroundColor Green
+Write-Host "All lint checks passed." -ForegroundColor Green
