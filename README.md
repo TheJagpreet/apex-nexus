@@ -9,8 +9,15 @@ Five independently deployable microservices, unified in one monorepo, runnable l
 
 ---
 
+## Demo
+
+<video src="https://github.com/user-attachments/assets/aa695321-606d-4f51-9a2f-5fc8b6714a47" controls width="100%"></video>
+
+---
+
 ## Table of Contents
 
+- [Demo](#demo)
 - [Architecture](#architecture)
 - [Services](#services)
 - [Prerequisites](#prerequisites)
