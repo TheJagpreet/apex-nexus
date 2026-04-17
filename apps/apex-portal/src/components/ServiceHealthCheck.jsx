@@ -12,6 +12,8 @@ const SERVICES = [
   { id: 'agents',   name: 'Apex Agents',    port: 8003, check: agentsHealth },
 ]
 
+const HEALTH_CHECK_INTERVAL_MS = 3000
+
 export default function ServiceHealthCheck({ onReady }) {
   const [statuses, setStatuses] = useState(
     () => Object.fromEntries(SERVICES.map(s => [s.id, 'checking']))
@@ -43,7 +45,7 @@ export default function ServiceHealthCheck({ onReady }) {
     }
 
     checkAll()
-    intervalRef.current = setInterval(checkAll, 3000)
+    intervalRef.current = setInterval(checkAll, HEALTH_CHECK_INTERVAL_MS)
 
     return () => {
       cancelled = true

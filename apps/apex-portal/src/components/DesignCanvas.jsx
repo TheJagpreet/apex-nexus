@@ -29,6 +29,7 @@ export function DesignCanvas({ children, minScale = 0.1, maxScale = 8, style = {
   const vpRef = React.useRef(null)
   const worldRef = React.useRef(null)
   const tf = React.useRef({ x: 0, y: 0, scale: 1 })
+  const MOUSE_WHEEL_ZOOM_FACTOR = 0.18
 
   const apply = React.useCallback(() => {
     const { x, y, scale } = tf.current
@@ -64,7 +65,7 @@ export function DesignCanvas({ children, minScale = 0.1, maxScale = 8, style = {
       if (e.ctrlKey) {
         zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.01))
       } else if (isMouseWheel(e)) {
-        zoomAt(e.clientX, e.clientY, Math.exp(-Math.sign(e.deltaY) * 0.18))
+        zoomAt(e.clientX, e.clientY, Math.exp(-Math.sign(e.deltaY) * MOUSE_WHEEL_ZOOM_FACTOR))
       } else {
         tf.current.x -= e.deltaX
         tf.current.y -= e.deltaY

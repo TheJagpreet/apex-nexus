@@ -27,6 +27,9 @@ function stripToolCalls(text) {
   return text ? text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '').trim() : ''
 }
 
+// Duration (ms) for the scrambled-text decode effect on streaming tokens
+const SCRAMBLE_DURATION_MS = 40
+
 const THINKING_PHRASES = [
   'Thinking…',
   'Consulting the oracle…',
@@ -328,7 +331,7 @@ function ChatView() {
                 <div className="message__bubble"
                   style={{ '--agent-color': streamingAgent.agent.color, borderColor: streamingAgent.agent.color }}>
                   {stripToolCalls(streamingAgent.content)
-                    ? <ScrambledText text={stripToolCalls(streamingAgent.content)} scrambleDuration={40} />
+                    ? <ScrambledText text={stripToolCalls(streamingAgent.content)} scrambleDuration={SCRAMBLE_DURATION_MS} />
                     : <span className="thinking-label">Using tools…</span>}
                 </div>
               </div>

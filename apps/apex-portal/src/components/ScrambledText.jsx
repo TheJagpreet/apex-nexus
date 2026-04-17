@@ -7,6 +7,8 @@ import { useEffect, useRef, useState } from 'react'
 
 const GLYPHS = '░▒▓█▀▄▌▐│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌αβγδεζηθλμξπσφψω∂∆∑∏∫≈≠≤≥⊕⊗⊂⊃∈∉∀∃¿¬¶§†‡°•◊※⌘⌥⏎⌫✦✧❖⟐⟑⬡⬢⎔⎕⌬'
 
+const ASSUMED_FRAME_DURATION_MS = 16
+
 function getRandomGlyph() {
   return GLYPHS[Math.floor(Math.random() * GLYPHS.length)]
 }
@@ -33,7 +35,7 @@ export default function ScrambledText({ text, scrambleDuration = 60, className =
     // Mark newly arrived characters for scrambling
     for (let i = prevLen; i < newLen; i++) {
       // scrambleDuration in ms per character, converted to frames (~16ms each)
-      const frames = Math.max(2, Math.floor(scrambleDuration / 16))
+      const frames = Math.max(2, Math.floor(scrambleDuration / ASSUMED_FRAME_DURATION_MS))
       scrambleMapRef.current.set(i, { target: text[i], remaining: frames })
     }
     prevLenRef.current = newLen

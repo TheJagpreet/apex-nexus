@@ -572,15 +572,14 @@ export function FlagellumSpinner({ size = 48 }) {
           stroke: ${ACCENT};
           stroke-width: 1.5;
           stroke-linecap: round;
-          animation: flagellum-wave 1s ease-in-out infinite;
-        }
-        @keyframes flagellum-wave {
-          0%, 100% { d: path("M 16 10 C 24 4, 36 16, 48 10 C 52 8, 56 10, 58 10"); }
-          50% { d: path("M 16 10 C 24 16, 36 4, 48 10 C 52 12, 56 10, 58 10"); }
         }
       `}</style>
       <ellipse className="flagellum-body" cx="10" cy="10" rx="8" ry="5" />
-      <path className="flagellum-tail" d="M 16 10 C 24 4, 36 16, 48 10 C 52 8, 56 10, 58 10" />
+      <path className="flagellum-tail" d="M 16 10 C 24 4, 36 16, 48 10 C 52 8, 56 10, 58 10">
+        <animate attributeName="d"
+          values="M 16 10 C 24 4, 36 16, 48 10 C 52 8, 56 10, 58 10;M 16 10 C 24 16, 36 4, 48 10 C 52 12, 56 10, 58 10;M 16 10 C 24 4, 36 16, 48 10 C 52 8, 56 10, 58 10"
+          dur="1s" repeatCount="indefinite" />
+      </path>
     </svg>
   )
 }
