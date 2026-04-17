@@ -1,32 +1,39 @@
 /* -----------------------------------------------------------------------
-   Design tokens — OpenCode-inspired terminal aesthetic
+   Design tokens — Bioluminescent deep-sea aesthetic
    Reference: apex-portal/docs/DESIGN.md
-   Light mode is the default; [data-theme="dark"] overrides.
+   Dark bioluminescent theme is the default.
 ----------------------------------------------------------------------- */
 :root {
   --font: 'IBM Plex Mono', 'Berkeley Mono', ui-monospace, SFMono-Regular,
     Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 
-  /* Surfaces */
-  --bg:           #fdfcfc;
-  --bg-surface:   #f1eeee;
-  --bg-raised:    #e8e4e4;
-  --bg-input:     #f8f7f7;
+  /* Bioluminescent palette (oklch) */
+  --bio-cyan:     oklch(0.82 0.16 178);
+  --bio-cyan-dim: oklch(0.55 0.12 178);
+  --bio-amber:    oklch(0.78 0.14 70);
+  --bio-magenta:  oklch(0.72 0.18 340);
+  --bio-fg:       oklch(0.95 0.01 90);
 
-  /* Text */
-  --text:          #201d1d;
-  --text-secondary: #9a9898;
-  --text-muted:    #6e6e73;
+  /* Surfaces — deep oceanic dark */
+  --bg:           #080c10;
+  --bg-surface:   #0e1319;
+  --bg-raised:    #151c24;
+  --bg-input:     #0e1319;
 
-  /* Borders */
-  --border:        rgba(15, 0, 0, 0.12);
-  --border-strong: #646262;
+  /* Text — warm bioluminescent tones */
+  --text:          #e8f4f0;
+  --text-secondary: #7eaba0;
+  --text-muted:    #4a7a70;
 
-  /* Semantic */
-  --accent:  #007aff;
-  --danger:  #ff3b30;
-  --success: #30d158;
-  --warning: #ff9f0a;
+  /* Borders — subtle cyan glow */
+  --border:        rgba(0, 255, 200, 0.08);
+  --border-strong: rgba(0, 255, 200, 0.18);
+
+  /* Semantic — bioluminescent accents */
+  --accent:  var(--bio-cyan);
+  --danger:  #ff4060;
+  --success: #30ffb0;
+  --warning: var(--bio-amber);
 
   /* Radius */
   --radius:       4px;
@@ -34,18 +41,36 @@
 
   /* Layout */
   --sidebar-width: 240px;
+
+  /* Glow utilities */
+  --glow-cyan:     0 0 20px rgba(0, 255, 200, 0.15), 0 0 60px rgba(0, 255, 200, 0.05);
+  --glow-cyan-sm:  0 0 8px rgba(0, 255, 200, 0.12);
+  --glow-amber:    0 0 20px rgba(255, 200, 60, 0.12);
+  --glow-magenta:  0 0 20px rgba(255, 80, 200, 0.12);
 }
 
 [data-theme='dark'] {
-  --bg:           #201d1d;
-  --bg-surface:   #302c2c;
-  --bg-raised:    #3d3838;
-  --bg-input:     #302c2c;
-  --text:         #fdfcfc;
-  --text-secondary: #9a9898;
-  --text-muted:   #6e6e73;
-  --border:       rgba(253, 252, 252, 0.12);
-  --border-strong: #646262;
+  --bg:           #080c10;
+  --bg-surface:   #0e1319;
+  --bg-raised:    #151c24;
+  --bg-input:     #0e1319;
+  --text:         #e8f4f0;
+  --text-secondary: #7eaba0;
+  --text-muted:   #4a7a70;
+  --border:       rgba(0, 255, 200, 0.08);
+  --border-strong: rgba(0, 255, 200, 0.18);
+}
+
+[data-theme='light'] {
+  --bg:           #f0f5f4;
+  --bg-surface:   #e0ebe8;
+  --bg-raised:    #d0dcd8;
+  --bg-input:     #e8f0ee;
+  --text:         #0a1a16;
+  --text-secondary: #3a6a5a;
+  --text-muted:   #5a8a7a;
+  --border:       rgba(0, 80, 60, 0.12);
+  --border-strong: rgba(0, 80, 60, 0.22);
 }
 
 /* -----------------------------------------------------------------------
@@ -115,6 +140,8 @@ body {
   font-weight: 700;
   line-height: 1.5;
   text-align: center;
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(0, 255, 200, 0.3), 0 0 40px rgba(0, 255, 200, 0.1);
 }
 
 .auth-form {
@@ -163,8 +190,8 @@ body {
 }
 
 .auth-btn {
-  background: var(--text);
-  color: var(--bg);
+  background: var(--accent);
+  color: #080c10;
   border: none;
   border-radius: var(--radius);
   padding: 10px 20px;
@@ -172,7 +199,8 @@ body {
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
-  transition: opacity 0.1s;
+  transition: opacity 0.1s, box-shadow 0.2s;
+  box-shadow: var(--glow-cyan-sm);
 }
 
 .auth-btn:hover:not(:disabled) { opacity: 0.8; }
@@ -188,6 +216,7 @@ body {
   color: var(--accent);
   text-decoration: underline 1px;
   text-underline-offset: 2px;
+  text-shadow: 0 0 8px rgba(0, 255, 200, 0.15);
 }
 
 /* -----------------------------------------------------------------------
@@ -221,7 +250,8 @@ body {
   padding: 0;
   cursor: pointer;
   font-family: var(--font);
-  color: var(--text);
+  color: var(--accent);
+  text-shadow: 0 0 12px rgba(0, 255, 200, 0.2);
   text-align: left;
 }
 
@@ -359,7 +389,8 @@ body {
 .sidebar__resize-handle:hover,
 .sidebar__resize-handle:active {
   background: var(--accent);
-  opacity: 0.4;
+  opacity: 0.5;
+  box-shadow: 0 0 6px rgba(0, 255, 200, 0.2);
 }
 
 /* -----------------------------------------------------------------------
@@ -500,8 +531,8 @@ body {
 
 .chat-bar__send {
   flex-shrink: 0;
-  background: var(--text);
-  color: var(--bg);
+  background: var(--accent);
+  color: #080c10;
   border: none;
   cursor: pointer;
   padding: 8px;
@@ -509,7 +540,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.1s;
+  transition: opacity 0.1s, box-shadow 0.2s;
+  box-shadow: var(--glow-cyan-sm);
 }
 
 .chat-bar__send:hover:not(:disabled) { opacity: 0.75; }
@@ -1646,6 +1678,298 @@ body {
   line-height: 1.5;
   max-height: 200px;
   overflow-y: auto;
+}
+
+/* -----------------------------------------------------------------------
+   Service Health Check overlay
+----------------------------------------------------------------------- */
+.health-check {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: health-check-fadein 0.4s ease-out;
+}
+
+@keyframes health-check-fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.health-check__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  transition: gap 0.6s ease, transform 0.6s ease;
+}
+
+.health-check__content--centered {
+  gap: 0;
+  transform: scale(1.1);
+}
+
+.health-check__spinner {
+  transition: transform 0.6s ease;
+}
+
+.health-check__content--centered .health-check__spinner {
+  transform: scale(1.2);
+}
+
+.health-check__services {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 260px;
+  transition: opacity 0.5s ease, transform 0.5s ease, max-height 0.5s ease;
+  max-height: 300px;
+  overflow: hidden;
+}
+
+.health-check__services--hidden {
+  opacity: 0;
+  transform: translateY(10px);
+  max-height: 0;
+}
+
+.health-check__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-surface);
+  font-size: 0.85rem;
+}
+
+.health-check__name {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.health-check__port {
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-left: 4px;
+  font-size: 0.75rem;
+}
+
+.health-check__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.health-check__dot--checking {
+  background: var(--text-muted);
+  animation: health-dot-pulse 1.2s ease-in-out infinite;
+}
+
+.health-check__dot--online {
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(48, 255, 176, 0.4);
+}
+
+.health-check__dot--offline {
+  background: var(--danger);
+  box-shadow: 0 0 8px rgba(255, 64, 96, 0.3);
+}
+
+@keyframes health-dot-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* -----------------------------------------------------------------------
+   Active Run Steps (pipeline visualization)
+----------------------------------------------------------------------- */
+.run-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 16px;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.run-steps--fade-out {
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+}
+
+.run-steps__step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  padding: 6px 10px;
+  border-radius: var(--radius);
+  border: 1px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.run-steps__step--pending {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.run-steps__step--active {
+  color: var(--accent);
+  border-color: var(--border);
+  background: var(--bg-surface);
+}
+
+.run-steps__step--done {
+  color: var(--success);
+  opacity: 0.7;
+}
+
+.run-steps__icon {
+  width: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.run-steps__label {
+  flex: 1;
+}
+
+.run-steps__check {
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+/* -----------------------------------------------------------------------
+   Scrambled text
+----------------------------------------------------------------------- */
+.scrambled-text {
+  font-family: var(--font);
+  unicode-bidi: embed;
+}
+
+/* -----------------------------------------------------------------------
+   Ingest Overlay (DNA spinner toast for RAG uploads)
+----------------------------------------------------------------------- */
+.ingest-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 12, 16, 0.6);
+  backdrop-filter: blur(4px);
+  animation: ingest-overlay-in 0.3s ease-out;
+}
+
+@keyframes ingest-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.ingest-overlay__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 32px 48px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: var(--glow-cyan), 0 8px 32px rgba(0, 0, 0, 0.4);
+  min-width: 240px;
+}
+
+.ingest-overlay__spinner {
+  animation: ingest-spinner-breathe 2s ease-in-out infinite;
+}
+
+@keyframes ingest-spinner-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.ingest-overlay__info {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ingest-overlay__stage {
+  font-size: 0.9rem;
+  color: var(--accent);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.ingest-overlay__filename {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ingest-overlay--done .ingest-overlay__stage {
+  color: var(--success);
+}
+
+.ingest-overlay--error .ingest-overlay__stage {
+  color: var(--danger);
+}
+
+/* -----------------------------------------------------------------------
+   Membrane idle state (empty chat)
+----------------------------------------------------------------------- */
+.chat-empty-membrane {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 64px 24px;
+  animation: membrane-fadein 0.6s ease-out;
+}
+
+.chat-empty-membrane__label {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: center;
+  max-width: 360px;
+}
+
+@keyframes membrane-fadein {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* -----------------------------------------------------------------------
+   Bioluminescent glow utilities
+----------------------------------------------------------------------- */
+.glow-border {
+  box-shadow: var(--glow-cyan-sm);
+}
+
+.glow-text {
+  text-shadow: 0 0 12px rgba(0, 255, 200, 0.3);
+}
+
+/* Subtle pulsing border glow for active elements */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(0, 255, 200, 0.05); }
+  50% { box-shadow: 0 0 12px rgba(0, 255, 200, 0.15); }
 }
 
 /* -----------------------------------------------------------------------

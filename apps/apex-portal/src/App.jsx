@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { runAgent } from './api/agents'
 import { extractKeywords, generate } from './api/gateway'
 import { ingestToCollection, query, queryCollection } from './api/rag'
+import ActiveRunSteps from './components/ActiveRunSteps'
 import ChatBar from './components/ChatBar'
 import MessageBubble from './components/MessageBubble'
+import ScrambledText from './components/ScrambledText'
+import ServiceHealthCheck from './components/ServiceHealthCheck'
 import Sidebar from './components/Sidebar'
+import { MembraneSpinner } from './components/Spinners'
 import ThemeToggle from './components/ThemeToggle'
 import { useAuth } from './context/AuthContext'
 import { useSession } from './context/SessionContext'
@@ -22,6 +26,9 @@ import SignupPage from './pages/SignupPage'
 function stripToolCalls(text) {
   return text ? text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '').trim() : ''
 }
+
+// Duration (ms) for the scrambled-text decode effect on streaming tokens
+const SCRAMBLE_DURATION_MS = 40
 
 const THINKING_PHRASES = [
   'Thinking…',
@@ -67,6 +74,10 @@ function ChatView() {
   const [loading, setLoading] = useState(false)
   // streamingAgent: { content, agent } | null — live agent response shown while SSE is in flight
   const [streamingAgent, setStreamingAgent] = useState(null)
+  // Active run steps state
+  const [runMode, setRunMode] = useState('direct')
+  const [runStep, setRunStep] = useState(null)
+  const [showRunSteps, setShowRunSteps] = useState(false)
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -99,6 +110,18 @@ function ChatView() {
     await saveMessage('user', userContent, userSources, fileNames.length ? fileNames : undefined, sessionId)
 
     setLoading(true)
+
+    // Determine run mode and show run steps
+    if (agent) {
+      setRunMode('agent')
+    } else if (collection || files.length > 0) {
+      setRunMode('rag')
+    } else {
+      setRunMode('direct')
+    }
+    setShowRunSteps(true)
+    setRunStep(null)
+
     try {
       // 1. Ingest directly-attached files into the default collection
       if (files.length > 0) {
@@ -122,11 +145,13 @@ function ChatView() {
 
         if (agent) {
           // ── Agent path — stream via apex-agents ─────────────────────────
+          setRunStep('context')
           // Optionally pull RAG context first if a collection is also selected
           let ragContext = ''
           if (collection) {
             let ragResult = { context: '', sources: [] }
             try {
+              setRunStep('context')
               const { keywords } = await extractKeywords(userContent)
               ragResult = await queryCollection(collection, keywords?.trim() || userContent)
             } catch { /* empty */ }
@@ -134,6 +159,7 @@ function ChatView() {
             sources = ragResult.sources ?? []
           }
 
+          setRunStep('agent')
           const history = messages.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }))
           let streamedAnswer = ''
           const toolsCalled = []
@@ -150,9 +176,12 @@ function ChatView() {
               session_id: sessionId,
             })) {
               if (event.type === 'token') {
+                // Hide run steps as soon as we get content
+                if (!streamedAnswer && showRunSteps) setShowRunSteps(false)
                 streamedAnswer += event.content
                 setStreamingAgent({ content: streamedAnswer, agent })
               } else if (event.type === 'tool_use') {
+                setRunStep('tools')
                 toolsCalled.push(event.tool)
               } else if (event.type === 'handoff') {
                 addLocalMessage({
@@ -162,14 +191,17 @@ function ChatView() {
               } else if (event.type === 'done') {
                 streamedAnswer = event.answer || stripToolCalls(streamedAnswer)
                 setStreamingAgent({ content: streamedAnswer, agent })
+                setShowRunSteps(false)
               } else if (event.type === 'error') {
                 streamedAnswer = `Agent error: ${event.detail}`
                 setStreamingAgent({ content: streamedAnswer, agent })
+                setShowRunSteps(false)
               }
             }
           } catch (err) {
             streamedAnswer = `Could not reach apex-agents. Is it running on port 8003? (${err.message})`
             setStreamingAgent({ content: streamedAnswer, agent })
+            setShowRunSteps(false)
           }
 
           setStreamingAgent(null)
@@ -189,7 +221,9 @@ function ChatView() {
           // ── RAG-scoped to selected KB folder ────────────────────────────
           let ragResult = { context: '', sources: [] }
           try {
+            setRunStep('keywords')
             const { keywords } = await extractKeywords(userContent)
+            setRunStep('query_kb')
             const searchQuery = keywords?.trim() || userContent
             ragResult = await queryCollection(collection, searchQuery)
           } catch { /* no docs yet or keyword extraction failed — fall back to raw question */ }
@@ -197,10 +231,14 @@ function ChatView() {
             try { ragResult = await queryCollection(collection, userContent) } catch { /* empty */ }
           }
           sources = ragResult.sources ?? []
+          setRunStep('context')
           try {
+            setRunStep('generate')
+            setShowRunSteps(false)
             const gen = await generate(userContent, ragResult.context ?? '', history)
             answer = gen.answer
           } catch {
+            setShowRunSteps(false)
             answer = ragResult.sources?.length
               ? 'Could not reach the LLM gateway. Is apex-gateway running?'
               : `No relevant documents found in "${collection}".`
@@ -213,22 +251,30 @@ function ChatView() {
         } else if (files.length > 0) {
           // ── Files were just ingested — search the default collection ────
           let ragResult = { context: '', sources: [] }
+          setRunStep('query_kb')
           try { ragResult = await query(userContent) } catch { /* empty */ }
           sources = ragResult.sources ?? []
+          setRunStep('generate')
+          setShowRunSteps(false)
           try {
             const gen = await generate(userContent, ragResult.context ?? '', history)
             answer = gen.answer
           } catch {
+            setShowRunSteps(false)
             answer = 'Could not reach the LLM gateway. Is apex-gateway running?'
           }
           await saveMessage('assistant', answer, sources.length ? sources : undefined, undefined, sessionId)
 
         } else {
           // ── No RAG context — send straight to LLM ───────────────────────
+          setRunStep('context')
           try {
+            setRunStep('generate')
+            setShowRunSteps(false)
             const gen = await generate(userContent, '', history)
             answer = gen.answer
           } catch {
+            setShowRunSteps(false)
             answer = 'Could not reach the LLM gateway. Is apex-gateway running on port 8002?'
           }
           await saveMessage('assistant', answer, undefined, undefined, sessionId)
@@ -241,8 +287,11 @@ function ChatView() {
       }
     } catch (err) {
       addLocalMessage({ role: 'error', content: err.message || 'Something went wrong.' })
+      setShowRunSteps(false)
     } finally {
       setLoading(false)
+      setShowRunSteps(false)
+      setRunStep(null)
     }
   }
 
@@ -251,14 +300,25 @@ function ChatView() {
       <div className="messages">
         <div className="messages-inner">
           {messages.length === 0 && !loading && (
-            <div className="chat-empty">
-              <p>Ask anything. Attach a KB folder to ground answers in your documents.</p>
+            <div className="chat-empty-membrane">
+              <MembraneSpinner size={80} />
+              <p className="chat-empty-membrane__label">
+                Ask anything. Attach a KB folder to ground answers in your documents.
+              </p>
             </div>
           )}
           {messages.map(msg => (
             <MessageBubble key={msg.id} message={msg} />
           ))}
-          {loading && !streamingAgent && <ThinkingBubble />}
+          {/* Active run steps — shown before content streams in */}
+          {loading && showRunSteps && (
+            <div className="message message--assistant">
+              <div className="message__stack">
+                <ActiveRunSteps mode={runMode} activeStep={runStep} visible={showRunSteps} />
+              </div>
+            </div>
+          )}
+          {loading && !streamingAgent && !showRunSteps && <ThinkingBubble />}
           {streamingAgent && (
             <div className="message message--assistant">
               <div className="message__stack">
@@ -270,7 +330,9 @@ function ChatView() {
                 </div>
                 <div className="message__bubble"
                   style={{ '--agent-color': streamingAgent.agent.color, borderColor: streamingAgent.agent.color }}>
-                  {stripToolCalls(streamingAgent.content) || <span className="thinking-label">Using tools…</span>}
+                  {stripToolCalls(streamingAgent.content)
+                    ? <ScrambledText text={stripToolCalls(streamingAgent.content)} scrambleDuration={SCRAMBLE_DURATION_MS} />
+                    : <span className="thinking-label">Using tools…</span>}
                 </div>
               </div>
             </div>
@@ -316,8 +378,30 @@ function AppLayout({ children }) {
 
 export default function App() {
   const { user, loading } = useAuth()
+  const [healthChecked, setHealthChecked] = useState(false)
+  const [showHealthCheck, setShowHealthCheck] = useState(true)
+
+  // Show health check on first visit (regardless of auth state)
+  useEffect(() => {
+    const checked = sessionStorage.getItem('apex_health_checked')
+    if (checked) {
+      setHealthChecked(true)
+      setShowHealthCheck(false)
+    }
+  }, [])
+
+  function handleHealthReady() {
+    setHealthChecked(true)
+    setShowHealthCheck(false)
+    sessionStorage.setItem('apex_health_checked', '1')
+  }
 
   if (loading) return <div className="app-loading">Loading…</div>
+
+  // Show health check overlay before anything else
+  if (showHealthCheck && !healthChecked) {
+    return <ServiceHealthCheck onReady={handleHealthReady} />
+  }
 
   if (!user) {
     return (

@@ -8,6 +8,11 @@ async function handleResponse(res) {
   return res.json()
 }
 
+// Health
+export async function ragHealth() {
+  return handleResponse(await fetch(`${BASE}/health`))
+}
+
 // Query — returns { question, context, sources }
 export async function query(question, topK = 5, collection = null) {
   return handleResponse(await fetch(`${BASE}/query`, {

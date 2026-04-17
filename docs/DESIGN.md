@@ -1,64 +1,65 @@
-# Design System Inspired by OpenCode
+# Design System — Bioluminescent Deep-Sea Aesthetic
 
 ## 1. Visual Theme & Atmosphere
 
-OpenCode's website embodies a terminal-native, monospace-first aesthetic that reflects its identity as an open source AI coding agent. The entire visual system is built on a stark dark-on-light contrast using a near-black background (`#201d1d`) with warm off-white text (`#fdfcfc`). This isn't a generic dark theme -- it's a warm, slightly reddish-brown dark that feels like a sophisticated terminal emulator rather than a cold IDE. The warm undertone in both the darks and lights (notice the subtle red channel in `#201d1d` -- rgb(32, 29, 29)) creates a cohesive, lived-in quality.
+The Apex portal embodies a bioluminescent deep-sea aesthetic — dark oceanic backgrounds with glowing cyan, amber, and magenta accents inspired by deep-ocean organisms. The visual system creates an immersive feeling of exploring a living neural network beneath the surface.
 
-Berkeley Mono is the sole typeface, establishing an unapologetic monospace identity. Every element -- headings, body text, buttons, navigation -- shares this single font family, creating a unified "everything is code" philosophy. The heading at 38px bold with 1.50 line-height is generous and readable, while body text at 16px with weight 500 provides a slightly heavier-than-normal reading weight that enhances legibility on screen. The monospace grid naturally enforces alignment and rhythm across the layout.
+The background palette is built on near-black oceanic tones (`#080c10` primary) with raised surfaces in progressively lighter blue-blacks (`#0e1319`, `#151c24`). This isn't a generic dark theme — it's specifically calibrated to evoke deep water, with cool blue undertones throughout.
 
-The color system is deliberately minimal. The primary palette consists of just three functional tones: the warm near-black (`#201d1d`), a medium warm gray (`#9a9898`), and a bright off-white (`#fdfcfc`). Semantic colors borrow from the Apple HIG palette -- blue accent (`#007aff`), red danger (`#ff3b30`), green success (`#30d158`), orange warning (`#ff9f0a`) -- giving the interface familiar, trustworthy signal colors without adding brand complexity. Borders use a subtle warm transparency (`rgba(15, 0, 0, 0.12)`) that ties into the warm undertone of the entire system.
+IBM Plex Mono is the primary typeface, maintaining the monospace identity from earlier iterations while providing excellent readability on dark backgrounds. The monospace grid naturally enforces alignment and rhythm across the layout.
+
+The color system centers on bioluminescent cyan (`oklch(0.82 0.16 178)`) as the primary accent, complemented by warm amber (`oklch(0.78 0.14 70)`) and rare magenta (`oklch(0.72 0.18 340)`). These colors appear with subtle glow effects (`text-shadow`, `box-shadow`) that reinforce the bioluminescent feel.
 
 **Key Characteristics:**
-- Berkeley Mono as the sole typeface -- monospace everywhere, no sans-serif or serif voices
-- Warm near-black primary (`#201d1d`) with reddish-brown undertone, not pure black
-- Off-white text (`#fdfcfc`) with warm tint, not pure white
-- Minimal 4px border radius throughout -- sharp, utilitarian corners
-- 8px base spacing system scaling up to 96px
-- Apple HIG-inspired semantic colors (blue, red, green, orange)
-- Transparent warm borders using `rgba(15, 0, 0, 0.12)`
-- Email input with generous 20px padding and 6px radius -- the most generous component radius
-- Single button variant: dark background, light text, tight vertical padding (4px 20px)
-- Underlined links as default link style, reinforcing the text-centric identity
+- IBM Plex Mono as the sole typeface — monospace everywhere
+- Deep oceanic dark primary (`#080c10`) with cool blue undertone
+- Bioluminescent text (`#e8f4f0`) with subtle cyan warmth
+- Bioluminescent cyan accent (`oklch(0.82 0.16 178)`) with glow effects
+- Minimal 4px border radius throughout
+- 8px base spacing system
+- Biology-inspired spinners and animations (Synapse, Membrane, DNA, Mitosis, etc.)
+- Subtle glow borders using `rgba(0, 255, 200, 0.08)` - `rgba(0, 255, 200, 0.18)`
+- CSS custom properties (`--glow-cyan`, `--glow-amber`, `--glow-magenta`) for glow utilities
 
 ## 2. Color Palette & Roles
 
-### Primary
-- **OpenCode Dark** (`#201d1d`): Primary background, button fills, link text. A warm near-black with subtle reddish-brown warmth -- rgb(32, 29, 29).
-- **OpenCode Light** (`#fdfcfc`): Primary text on dark surfaces, button text. A barely-warm off-white that avoids clinical pure white.
-- **Mid Gray** (`#9a9898`): Secondary text, muted links. A neutral warm gray that bridges dark and light.
+### Bioluminescent Palette (oklch)
+- **Bio Cyan** (`oklch(0.82 0.16 178)`): Primary accent, interactive highlights, logo glow
+- **Bio Cyan Dim** (`oklch(0.55 0.12 178)`): Muted accent, secondary indicators
+- **Bio Amber** (`oklch(0.78 0.14 70)`): Warm accent, warnings, secondary highlights
+- **Bio Magenta** (`oklch(0.72 0.18 340)`): Rare third accent, special indicators
+- **Bio Foreground** (`oklch(0.95 0.01 90)`): Near-white for highest contrast text
 
-### Secondary
-- **Dark Surface** (`#302c2c`): Slightly lighter than primary dark, used for elevated surfaces and subtle differentiation.
-- **Border Gray** (`#646262`): Stronger borders, outline rings on interactive elements.
-- **Light Surface** (`#f1eeee`): Light mode surface, subtle background variation.
+### Primary Surfaces
+- **Deep Ocean** (`#080c10`): Primary background — near-black with cool blue
+- **Mid Ocean** (`#0e1319`): Surface backgrounds, sidebar, inputs
+- **Shallow Ocean** (`#151c24`): Raised surfaces, code blocks, hover states
 
-### Accent
-- **Accent Blue** (`#007aff`): Primary accent, links, interactive highlights. Apple system blue.
-- **Accent Blue Hover** (`#0056b3`): Darker blue for hover states.
-- **Accent Blue Active** (`#004085`): Deepest blue for pressed/active states.
+### Text
+- **Primary Text** (`#e8f4f0`): Main body text — warm bioluminescent white
+- **Secondary Text** (`#7eaba0`): Labels, descriptions — muted cyan-green
+- **Muted Text** (`#4a7a70`): Placeholders, disabled — deeper muted
+
+### Borders
+- **Border Subtle** (`rgba(0, 255, 200, 0.08)`): Default borders — barely visible glow
+- **Border Strong** (`rgba(0, 255, 200, 0.18)`): Interactive borders — noticeable glow
 
 ### Semantic
-- **Danger Red** (`#ff3b30`): Error states, destructive actions. Apple system red.
-- **Danger Hover** (`#d70015`): Darker red for hover on danger elements.
-- **Danger Active** (`#a50011`): Deepest red for pressed danger states.
-- **Success Green** (`#30d158`): Success states, positive feedback. Apple system green.
-- **Warning Orange** (`#ff9f0a`): Warning states, caution signals. Apple system orange.
-- **Warning Hover** (`#cc7f08`): Darker orange for hover on warning elements.
-- **Warning Active** (`#995f06`): Deepest orange for pressed warning states.
+- **Accent** (`oklch(0.82 0.16 178)` / cyan): Primary interactive color
+- **Danger** (`#ff4060`): Error states, destructive actions — warm red
+- **Success** (`#30ffb0`): Success states — bright bio-green
+- **Warning** (`oklch(0.78 0.14 70)` / amber): Warning states
 
-### Text Scale
-- **Text Muted** (`#6e6e73`): Muted labels, disabled text, placeholder content.
-- **Text Secondary** (`#424245`): Secondary text on light backgrounds, captions.
-
-### Border
-- **Border Warm** (`rgba(15, 0, 0, 0.12)`): Primary border color, warm transparent black with red tint.
-- **Border Tab** (`#9a9898`): Tab underline border, 2px solid bottom.
-- **Border Outline** (`#646262`): 1px solid outline border for containers.
+### Glow Utilities (CSS Custom Properties)
+- **`--glow-cyan`**: `0 0 20px rgba(0, 255, 200, 0.15), 0 0 60px rgba(0, 255, 200, 0.05)` — large glow
+- **`--glow-cyan-sm`**: `0 0 8px rgba(0, 255, 200, 0.12)` — subtle glow for buttons/inputs
+- **`--glow-amber`**: `0 0 20px rgba(255, 200, 60, 0.12)` — amber element glow
+- **`--glow-magenta`**: `0 0 20px rgba(255, 80, 200, 0.12)` — magenta accent glow
 
 ## 3. Typography Rules
 
 ### Font Family
-- **Universal**: `Berkeley Mono`, with fallbacks: `IBM Plex Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace`
+- **Universal**: `IBM Plex Mono`, with fallbacks: `Berkeley Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace`
 
 ### Hierarchy
 
@@ -72,210 +73,128 @@ The color system is deliberately minimal. The primary palette consists of just t
 | Caption | 14px (0.88rem) | 400 | 2.00 (relaxed) | Footnotes, metadata, small labels |
 
 ### Principles
-- **One font, one voice**: Berkeley Mono is used exclusively. There is no typographic variation between display, body, and code -- everything speaks in the same monospace register. Hierarchy is achieved through size and weight alone.
-- **Weight as hierarchy**: 700 for headings, 500 for interactive/medium emphasis, 400 for body text. Three weight levels create the entire hierarchy.
-- **Generous line-height**: 1.50 as the standard line-height gives text room to breathe within the monospace grid. The relaxed 2.00 line-height on captions creates clear visual separation.
-- **Tight for interaction**: Interactive elements (tabs, compact labels) use 1.00 line-height for dense, clickable targets.
+- **One font, one voice**: IBM Plex Mono exclusively. Hierarchy through size and weight alone.
+- **Weight as hierarchy**: 700 for headings, 500 for interactive/medium emphasis, 400 for body text.
+- **Generous line-height**: 1.50 standard, 2.00 for captions.
 
-## 4. Component Stylings
+## 4. Biology-Inspired Spinners
+
+All spinners are pure CSS + SVG, using the bioluminescent accent palette. Located in `src/components/Spinners.jsx`.
+
+| Spinner | Purpose | Visual |
+|---------|---------|--------|
+| **MitosisSpinner** | Agent spawning | Two cells dividing and merging |
+| **SynapseSpinner** | Service health check | Neural nodes with firing pulses |
+| **MembraneSpinner** | Idle/empty states | Concentric rings breathing |
+| **DNASpinner** | RAG file ingestion | Double helix dots unwinding |
+| **EnzymeSpinner** | Tool execution | Rotating catalytic complex |
+| **NeuralNetSpinner** | LLM inference | Pulsing network graph |
+| **BiolumPulseSpinner** | General loading | Radial glow pulse |
+| **RibosomeSpinner** | Chunking/embedding | Particles along a track |
+| **OrganelleSpinner** | Multi-service coordination | Orbiting particles |
+| **PhageSpinner** | Code injection/tools | Virus-like injector |
+| **FlagellumSpinner** | Linear indicator | Whip-like tail motion |
+| **PhotonScatterSpinner** | General scatter | Particles emitting from center |
+
+## 5. Component Stylings
 
 ### Buttons
 
-**Primary (Dark Fill)**
-- Background: `#201d1d` (OpenCode Dark)
-- Text: `#fdfcfc` (OpenCode Light)
-- Padding: 4px 20px
+**Primary (Accent Fill)**
+- Background: `var(--accent)` (bioluminescent cyan)
+- Text: `#080c10` (deep ocean)
+- Padding: 10px 20px
 - Radius: 4px
-- Font: 16px Berkeley Mono, weight 500, line-height 2.00 (relaxed)
-- Outline: `rgb(253, 252, 252) none 0px`
-- Use: Primary CTAs, main actions
+- Box-shadow: `var(--glow-cyan-sm)`
+- Font: 16px IBM Plex Mono, weight 500
 
 ### Inputs
-
-**Email Input**
-- Background: `#f8f7f7` (light neutral)
-- Text: `#201d1d`
-- Border: `1px solid rgba(15, 0, 0, 0.12)`
-- Padding: 20px
+- Background: `var(--bg-input)` (`#0e1319`)
+- Text: `var(--text)` (`#e8f4f0`)
+- Border: `1px solid var(--border-strong)`
+- Padding: 10px 14px
 - Radius: 6px
-- Font: Berkeley Mono, standard size
-- Use: Form fields, email capture
+- Focus: `border-color: var(--accent)`
 
 ### Links
-
-**Default Link**
-- Color: `#201d1d`
+- Color: `var(--accent)` (bioluminescent cyan)
 - Decoration: underline 1px
-- Font-weight: 500
-- Use: Primary text links in body content
+- Text-shadow: `0 0 8px rgba(0, 255, 200, 0.15)`
 
-**Light Link**
-- Color: `#fdfcfc`
-- Decoration: none
-- Use: Links on dark backgrounds, navigation
+### Logo Text
+- Color: `var(--accent)`
+- Text-shadow: `0 0 20px rgba(0, 255, 200, 0.3), 0 0 40px rgba(0, 255, 200, 0.1)`
 
-**Muted Link**
-- Color: `#9a9898`
-- Decoration: none
-- Use: Footer links, secondary navigation
+## 6. Special UI Components
 
-### Tabs
+### Service Health Check
+Shown on first visit before login/signup. Centered synapse spinner with service status rows (green/red dots). Rows fade out when all green, spinner centers with ease-in animation, then redirects.
 
-**Tab Navigation**
-- Border-bottom: `2px solid #9a9898` (active tab indicator)
-- Font: 16px, weight 500, line-height 1.00
-- Use: Section switching, content filtering
+### Scrambled Text Effect
+During LLM streaming, incoming characters show as random Unicode symbols/glyphs before settling to their final value. Creates the visual of meaning emerging from randomness.
 
-### Navigation
-- Clean horizontal layout with Berkeley Mono throughout
-- Brand logotype left-aligned in monospace
-- Links at 16px weight 500 with underline decoration
-- Dark background matching page background
-- No backdrop blur or transparency -- solid surfaces only
+### Active Run Steps
+Pipeline visualization shown before output streams in. Steps like "Querying knowledge base", "Building LLM context", "Executing tools" appear with status indicators (pending/active/done). Fades out when actual content begins streaming.
 
-### Image Treatment
-- Terminal/code screenshots as hero imagery
-- Dark terminal aesthetic with monospace type
-- Minimal borders, content speaks for itself
+### Ingest Overlay
+Centered modal overlay with DNA transcription spinner shown during RAG file upload. Displays current stage (uploading, chunking, embedding, storing) with filename.
 
-### Distinctive Components
+### DesignCanvas
+Figma-like infinite canvas with pan/zoom (trackpad pinch, mouse wheel, drag). Includes DCSection, DCArtboard, and DCPostIt sub-components.
 
-**Terminal Hero**
-- Full-width dark terminal window as hero element
-- ASCII art / stylized logo within terminal frame
-- Monospace command examples with syntax highlighting
-- Reinforces the CLI-first identity of the product
-
-**Feature List**
-- Bulleted feature items with Berkeley Mono text
-- Weight 500 for feature names, 400 for descriptions
-- Tight vertical spacing between items
-- No cards or borders -- pure text layout
-
-**Email Capture**
-- Light background input (`#f8f7f7`) contrasting dark page
-- Generous 20px padding for comfortable typing
-- 6px radius -- the roundest element in the system
-- Newsletter/waitlist pattern
-
-## 5. Layout Principles
+## 7. Layout Principles
 
 ### Spacing System
 - Base unit: 8px
-- Fine scale: 1px, 2px, 4px (sub-8px for borders and micro-adjustments)
+- Fine scale: 1px, 2px, 4px
 - Standard scale: 8px, 12px, 16px, 20px, 24px
 - Extended scale: 32px, 40px, 48px, 64px, 80px, 96px
-- The system follows a clean 4/8px grid with consistent doubling
-
-### Grid & Container
-- Max content width: approximately 800-900px (narrow, reading-optimized)
-- Single-column layout as the primary pattern
-- Centered content with generous horizontal margins
-- Hero section: full-width dark terminal element
-- Feature sections: single-column text blocks
-- Footer: multi-column link grid
-
-### Whitespace Philosophy
-- **Monospace rhythm**: The fixed-width nature of Berkeley Mono creates a natural vertical grid. Line-heights of 1.50 and 2.00 maintain consistent rhythm.
-- **Narrow and focused**: Content is constrained to a narrow column, creating generous side margins that focus attention on the text.
-- **Sections through spacing**: No decorative dividers. Sections are separated by generous vertical spacing (48-96px) rather than borders or background changes.
 
 ### Border Radius Scale
-- Micro (4px): Default for all elements -- buttons, containers, badges
-- Input (6px): Form inputs get slightly more roundness
-- The entire system uses just two radius values, reinforcing the utilitarian aesthetic
+- Micro (4px): Default for all elements
+- Input (6px): Form inputs
+- Overlay (8px): Modal cards, toasts
 
-## 6. Depth & Elevation
+## 8. Depth & Elevation
 
 | Level | Treatment | Use |
 |-------|-----------|-----|
-| Flat (Level 0) | No shadow, no border | Default state for most elements |
-| Border Subtle (Level 1) | `1px solid rgba(15, 0, 0, 0.12)` | Section dividers, input borders, horizontal rules |
-| Border Tab (Level 2) | `2px solid #9a9898` bottom only | Active tab indicator |
-| Border Outline (Level 3) | `1px solid #646262` | Container outlines, elevated elements |
+| Flat (Level 0) | No shadow, no border | Default state |
+| Border Subtle (Level 1) | `rgba(0, 255, 200, 0.08)` | Section dividers, input borders |
+| Border Strong (Level 2) | `rgba(0, 255, 200, 0.18)` | Interactive borders, active elements |
+| Glow Small (Level 3) | `var(--glow-cyan-sm)` | Buttons, active inputs |
+| Glow Large (Level 4) | `var(--glow-cyan)` | Modals, hero elements |
 
-**Shadow Philosophy**: OpenCode's depth system is intentionally flat. There are no box-shadows in the extracted tokens -- zero shadow values were detected. Depth is communicated exclusively through border treatments and background color shifts. This flatness is consistent with the terminal aesthetic: terminals don't have shadows, and neither does OpenCode. The three border levels (transparent warm, tab indicator, solid outline) create sufficient visual hierarchy without any elevation illusion.
+**Shadow Philosophy**: Depth is communicated through glow effects rather than traditional box-shadows. The bioluminescent theme uses radial glows that reinforce the undersea aesthetic.
 
-### Decorative Depth
-- Background color shifts between `#201d1d` and `#302c2c` create subtle surface differentiation
-- Transparent borders at 12% opacity provide barely-visible structure
-- The warm reddish tint in border colors (`rgba(15, 0, 0, 0.12)`) ties borders to the overall warm dark palette
-- No gradients, no blurs, no ambient effects -- pure flat terminal aesthetic
+## 9. Theme Modes
 
-## 7. Interaction & Motion
+The system supports both dark (default, bioluminescent) and light modes via `[data-theme]`:
 
-### Hover States
-- Links: color shift from default to accent blue (`#007aff`) or underline style change
-- Buttons: subtle background lightening or border emphasis
-- Accent blue provides a three-stage hover sequence: `#007aff` → `#0056b3` → `#004085` (default → hover → active)
-- Danger red: `#ff3b30` → `#d70015` → `#a50011`
-- Warning orange: `#ff9f0a` → `#cc7f08` → `#995f06`
+**Dark (default)**: Deep oceanic backgrounds with glowing accents
+**Light**: Soft sage/seafoam backgrounds with muted accents — still ocean-inspired but for bright environments
 
-### Focus States
-- Border-based focus: increased border opacity or solid border color
-- No shadow-based focus rings -- consistent with the flat, no-shadow aesthetic
-- Keyboard focus likely uses outline or border color shift to accent blue
-
-### Transitions
-- Minimal transitions expected -- terminal-inspired interfaces favor instant state changes
-- Color transitions: 100-150ms for subtle state feedback
-- No scale, rotate, or complex transform animations
-
-## 8. Responsive Behavior
-
-### Breakpoints
-| Name | Width | Key Changes |
-|------|-------|-------------|
-| Mobile | <640px | Single column, reduced padding, heading scales down |
-| Tablet | 640-1024px | Content width expands, slight padding increase |
-| Desktop | >1024px | Full content width (~800-900px centered), maximum whitespace |
-
-### Touch Targets
-- Buttons with 4px 20px padding provide adequate horizontal touch area
-- Input fields with 20px padding ensure comfortable mobile typing
-- Tab items at 16px with tight line-height may need mobile adaptation
-
-### Collapsing Strategy
-- Hero heading: 38px → 28px → 24px on smaller screens
-- Navigation: horizontal links → hamburger/drawer on mobile
-- Feature lists: maintain single-column, reduce horizontal padding
-- Terminal hero: maintain full-width, reduce internal padding
-- Footer columns: multi-column → stacked single column
-- Section spacing: 96px → 64px → 48px on mobile
-
-### Image Behavior
-- Terminal screenshots maintain aspect ratio and border treatment
-- Full-width elements scale proportionally
-- Monospace type maintains readability at all sizes due to fixed-width nature
-
-## 9. Agent Prompt Guide
+## 10. Agent Prompt Guide
 
 ### Quick Color Reference
-- Page background: `#201d1d` (warm near-black)
-- Primary text: `#fdfcfc` (warm off-white)
-- Secondary text: `#9a9898` (warm gray)
-- Muted text: `#6e6e73`
-- Accent: `#007aff` (blue)
-- Danger: `#ff3b30` (red)
-- Success: `#30d158` (green)
-- Warning: `#ff9f0a` (orange)
-- Button bg: `#201d1d`, button text: `#fdfcfc`
-- Border: `rgba(15, 0, 0, 0.12)` (warm transparent)
-- Input bg: `#f8f7f7`, input border: `rgba(15, 0, 0, 0.12)`
-
-### Example Component Prompts
-- "Create a hero section on `#201d1d` warm dark background. Headline at 38px Berkeley Mono weight 700, line-height 1.50, color `#fdfcfc`. Subtitle at 16px weight 400, color `#9a9898`. Primary CTA button (`#201d1d` bg with `1px solid #646262` border, 4px radius, 4px 20px padding, `#fdfcfc` text at weight 500)."
-- "Design a feature list: single-column on `#201d1d` background. Feature name at 16px Berkeley Mono weight 700, color `#fdfcfc`. Description at 16px weight 400, color `#9a9898`. No cards, no borders -- pure text with 16px vertical gap between items."
-- "Build an email capture form: `#f8f7f7` background input, `1px solid rgba(15, 0, 0, 0.12)` border, 6px radius, 20px padding. Adjacent dark button (`#201d1d` bg, `#fdfcfc` text, 4px radius, 4px 20px padding). Berkeley Mono throughout."
-- "Create navigation: sticky `#201d1d` background. 16px Berkeley Mono weight 500 for links, `#fdfcfc` text. Brand name left-aligned in monospace. Links with underline decoration. No blur, no transparency -- solid dark surface."
-- "Design a footer: `#201d1d` background, multi-column link grid. Links at 16px Berkeley Mono weight 400, color `#9a9898`. Section headers at weight 700. Border-top `1px solid rgba(15, 0, 0, 0.12)` separator."
+- Page background: `#080c10` (deep ocean)
+- Primary text: `#e8f4f0` (bioluminescent white)
+- Secondary text: `#7eaba0` (muted cyan)
+- Muted text: `#4a7a70`
+- Accent: `oklch(0.82 0.16 178)` (bio cyan)
+- Danger: `#ff4060`
+- Success: `#30ffb0`
+- Warning: `oklch(0.78 0.14 70)` (bio amber)
+- Button bg: `var(--accent)`, button text: `#080c10`
+- Border: `rgba(0, 255, 200, 0.08)` (subtle glow)
+- Input bg: `#0e1319`, input border: `rgba(0, 255, 200, 0.18)`
 
 ### Iteration Guide
-1. Berkeley Mono is the only font -- never introduce a second typeface. Size and weight create all hierarchy.
-2. Keep surfaces flat: no shadows, no gradients, no blur effects. Use borders and background shifts only.
-3. The warm undertone matters: use `#201d1d` not `#000000`, use `#fdfcfc` not `#ffffff`. The reddish warmth is subtle but essential.
-4. Border radius is 4px everywhere except inputs (6px). Never use rounded pills or large radii.
-5. Semantic colors follow Apple HIG: `#007aff` blue, `#ff3b30` red, `#30d158` green, `#ff9f0a` orange. Each has hover and active darkened variants.
-6. Three-stage interaction: default → hover (darkened) → active (deeply darkened) for all semantic colors.
-7. Borders use `rgba(15, 0, 0, 0.12)` -- a warm transparent dark, not neutral gray. This ties borders to the warm palette.
-8. Spacing follows an 8px grid: 8, 16, 24, 32, 40, 48, 64, 80, 96px. Use 4px for fine adjustments only.
+1. IBM Plex Mono is the only font. Size and weight create all hierarchy.
+2. Use glow effects instead of traditional shadows. `--glow-cyan-sm` for subtle, `--glow-cyan` for prominent.
+3. The cool blue undertone matters: use `#080c10` not `#000000`, use `#e8f4f0` not `#ffffff`.
+4. Border radius is 4px everywhere except inputs (6px) and overlays (8px).
+5. Semantic colors: cyan accent, `#ff4060` red, `#30ffb0` green, amber orange.
+6. Borders use `rgba(0, 255, 200, 0.08)` — a barely-visible cyan glow.
+7. Spacing follows an 8px grid.
+8. Use biology-inspired spinners from `Spinners.jsx` for all loading states.

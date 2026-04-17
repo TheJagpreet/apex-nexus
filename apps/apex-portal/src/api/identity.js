@@ -68,6 +68,11 @@ export async function deleteSession(token, sessionId) {
   if (!res.ok) throw new Error(res.statusText)
 }
 
+// Health
+export async function identityHealth() {
+  return handleResponse(await fetch(`${BASE}/health`))
+}
+
 // Messages
 export async function addMessage(token, sessionId, role, content, sources, files) {
   return handleResponse(await fetch(`${BASE}/sessions/${sessionId}/messages`, {
