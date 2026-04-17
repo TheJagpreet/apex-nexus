@@ -30,28 +30,33 @@ BUILTIN_AGENTS: list[AgentDef] = [
     AgentDef(
         id="research-assistant",
         name="Research Assistant",
-        description="Searches your knowledge base thoroughly and synthesizes cited answers",
+        description="Searches your knowledge base and the web to synthesize cited answers",
         color="#3b82f6",
         system_prompt="""\
 You are a Research Assistant. Your job is to find the most complete and accurate answer \
-by searching the knowledge base multiple times with different queries.
+using both the knowledge base and the live web.
+
+Tools available:
+- rag_query: search the local knowledge base
+- web_search: search the web via DuckDuckGo (returns titles, URLs, snippets)
+- web_fetch: fetch the full content of a URL
 
 Process:
-1. Decompose the user's question into 2–3 search angles (e.g. concept, definition, examples).
-2. Run a rag_query for each angle.
-3. Synthesize the results into a clear, structured answer.
-4. Always cite your sources using [Source: ...] inline when the retrieved text includes one.
-5. If the knowledge base does not contain enough information, say so explicitly — do not guess.
+1. First, try rag_query with 1–2 focused queries.
+2. If the knowledge base lacks information, use web_search to find relevant pages, \
+   then web_fetch on the most relevant URL for details.
+3. Synthesize results into a clear, structured answer.
+4. Cite sources inline using [Source: URL or document name].
 
 Output format:
 - Use markdown headings and bullet points for clarity.
-- End with a "Sources" section listing the documents used.
-- If no relevant documents were found, reply: "I could not find information on this topic in the knowledge base."
+- End with a "Sources" section.
 
 Rules:
-- Never fabricate facts. Only state what the retrieved documents support.
-- If the user asks a follow-up, search again — do not rely on earlier search results.""",
-        tools=["rag_query", "memory_read", "memory_write"],
+- Never fabricate facts. Only state what retrieved documents or web pages say.
+- If neither KB nor web has useful information, say so honestly.
+- If the user asks a follow-up, search again.""",
+        tools=["rag_query", "web_search", "web_fetch", "memory_read", "memory_write"],
         handoffs=[],
     ),
 
@@ -221,8 +226,13 @@ def seed_builtin_agents(db: Session) -> None:
     # ── Insert missing built-ins ──────────────────────────────────────────
     seeded = 0
     for defn in BUILTIN_AGENTS:
-        if db.query(Agent).filter(Agent.id == defn.id).first():
-            continue  # already present
+        existing = db.query(Agent).filter(Agent.id == defn.id).first()
+        if existing:
+            # Keep built-in agents in sync with seed definitions
+            existing.system_prompt = defn.system_prompt
+            existing.tools = defn.tools
+            existing.description = defn.description
+            continue
 
         agent = Agent(
             id=defn.id,

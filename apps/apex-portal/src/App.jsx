@@ -130,7 +130,7 @@ function ChatView() {
 
     // Ensure a session exists; capture its id immediately (don't rely on
     // context state which won't flush until after this render cycle).
-    const isNewSession = !activeSession
+    const isNewSession = !activeSession || messages.length === 0
     let sessionId = activeSession?.id
     if (!sessionId) {
       const title = text.trim().slice(0, 60) || 'New conversation'
