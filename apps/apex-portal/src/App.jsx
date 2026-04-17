@@ -24,8 +24,13 @@ import SignupPage from './pages/SignupPage'
 // ---------------------------------------------------------------------------
 
 // Strips <tool_call> XML so raw markup never shows in the live bubble.
+// Handles both complete tags AND incomplete ones mid-stream (no closing tag yet).
 function stripToolCalls(text) {
-  return text ? text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '').trim() : ''
+  if (!text) return ''
+  return text
+    .replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '')  // complete
+    .replace(/<tool_call>[\s\S]*/g, '')                 // still streaming — cut from opening tag onwards
+    .trim()
 }
 
 // Duration (ms) for the scrambled-text decode effect on streaming tokens
@@ -327,15 +332,12 @@ function ChatView() {
         }
       }
 
-      // Auto-title: ask the LLM for a 3-5 word summary; fallback to slice
+      // Auto-title: extractKeywords returns a tight phrase fast; fallback to slice
       if (isNewSession && userContent) {
-        generate(
-          `Give a 3-5 word chat session title for this message. Reply with ONLY the title, no quotes or punctuation: "${userContent.slice(0, 300)}"`,
-          '', []
-        )
+        extractKeywords(userContent.slice(0, 300))
           .then(r => {
-            const title = r.answer?.trim().replace(/^["']|["']$/g, '').slice(0, 60)
-            return renameSession(sessionId, title || userContent.slice(0, 60))
+            const title = r.keywords?.trim().slice(0, 60) || userContent.slice(0, 60)
+            return renameSession(sessionId, title)
           })
           .catch(() => renameSession(sessionId, userContent.slice(0, 60)))
       }
