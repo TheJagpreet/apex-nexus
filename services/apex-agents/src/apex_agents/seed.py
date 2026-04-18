@@ -228,9 +228,12 @@ def seed_builtin_agents(db: Session) -> None:
     for defn in BUILTIN_AGENTS:
         existing = db.query(Agent).filter(Agent.id == defn.id).first()
         if existing:
+            existing.name = defn.name
+            existing.description = defn.description
+            existing.color = defn.color
             existing.system_prompt = defn.system_prompt
             existing.tools = defn.tools
-            existing.description = defn.description
+            existing.handoffs = defn.handoffs
             updated += 1
             continue
 

@@ -20,10 +20,11 @@ Or from repo root: `make dev-agents` / `make test-agents` / `make lint-agents`
 
 ## Architecture
 
-- **Storage**: `agents` table — id, name, description, color, system_prompt, tools (JSON), handoffs (JSON), is_builtin
-- **Seed**: 7 built-in agents seeded on startup (Orchestrator, Planner, Architect, Solutioner, Tester, Maintenance, Skill Creator)
+- **Storage**: `agents` and `custom_tools` tables — id, name, description, color, system_prompt, tools (JSON), handoffs (JSON), is_builtin
+- **Seed**: 5 built-in agents seeded on startup (Research Assistant, Q&A Expert, Writing Assistant, Data Analyst, Support Agent)
 - **Runner** (`runner.py`): ChatOllama streaming → `<tool_call>` detection → tool dispatch → SSE events
-- **Tools**: `llm_generate`, `rag_query`, `memory_read`, `memory_write`, `handoff`, `code_exec` (disabled), `file_read`
+- **Built-in Tools** (enabled per-agent): `rag_query`, `llm_generate`, `memory_read`, `memory_write`, `handoff`, `file_read`, `code_exec`, `web_fetch`, `web_search`
+- **Custom Tools**: User-defined Python functions stored in SQLite, executed in a sandboxed thread pool
 
 ## Key Files
 
@@ -44,9 +45,14 @@ Or from repo root: `make dev-agents` / `make test-agents` / `make lint-agents`
 | POST | `/agents` | Create agent |
 | GET | `/agents/{id}` | Get agent detail |
 | PUT | `/agents/{id}` | Update agent |
-| DELETE | `/agents/{id}` | Delete agent (custom only) |
-| GET | `/tools` | List tools |
+| DELETE | `/agents/{id}` | Delete agent (custom only, 403 for built-ins) |
 | POST | `/agents/{id}/run` | Run agent — SSE stream |
+| GET | `/tools` | List built-in + custom tools |
+| POST | `/tools/test` | Sandbox-test a custom tool code snippet |
+| POST | `/tools` | Save a new custom tool |
+| GET | `/tools/{id}` | Get tool detail |
+| PUT | `/tools/{id}` | Update custom tool |
+| DELETE | `/tools/{id}` | Delete custom tool |
 
 ## SSE Event Format
 

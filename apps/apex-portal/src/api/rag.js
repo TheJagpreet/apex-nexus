@@ -46,7 +46,10 @@ export async function createCollection(name) {
 
 export async function deleteCollection(name) {
   const res = await fetch(`${BASE}/collections/${encodeURIComponent(name)}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error(res.statusText)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }))
+    throw new Error(err.detail ?? res.statusText)
+  }
 }
 
 export async function listFiles(collectionName) {
@@ -59,7 +62,10 @@ export async function deleteFile(collectionName, source) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ source }),
   })
-  if (!res.ok) throw new Error(res.statusText)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }))
+    throw new Error(err.detail ?? res.statusText)
+  }
 }
 
 /**
@@ -100,7 +106,7 @@ export async function ingestToCollection(collectionName, file, onProgress) {
           if (event.stage === 'done') chunks = event.chunks ?? 0
           if (event.stage === 'error') throw new Error(event.message)
         } catch (e) {
-          if (e.message !== 'JSON parse error') throw e
+          if (!(e instanceof SyntaxError)) throw e
         }
       }
     }

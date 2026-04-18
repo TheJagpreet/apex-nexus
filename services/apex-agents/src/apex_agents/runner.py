@@ -45,6 +45,11 @@ BUILTIN_TOOLS: dict[str, dict[str, Any]] = {
         "description": "Search the knowledge base for relevant documents and context.",
         "enabled_by_default": True,
     },
+    "llm_generate": {
+        "name": "LLM Generate",
+        "description": "Call the gateway LLM with a custom prompt and optional context. Returns the generated text.",
+        "enabled_by_default": False,
+    },
     "memory_read": {
         "name": "Memory Read",
         "description": "Read a value from this agent's persistent memory store.",
@@ -59,6 +64,11 @@ BUILTIN_TOOLS: dict[str, dict[str, Any]] = {
         "name": "Handoff",
         "description": "Delegate execution to another configured agent.",
         "enabled_by_default": True,
+    },
+    "file_read": {
+        "name": "File Read",
+        "description": "Read the text content of a local file path. Restricted to safe paths.",
+        "enabled_by_default": False,
     },
     "code_exec": {
         "name": "Code Exec",
@@ -190,6 +200,47 @@ async def _exec_memory_write(inp: dict, agent_id: str, db: Session) -> str:
     return f"[saved key '{key}']"
 
 
+async def _exec_llm_generate(inp: dict, settings: Settings) -> str:
+    prompt = inp.get("prompt", inp.get("question", ""))
+    context = inp.get("context", "")
+    if not prompt:
+        return "[error: no prompt provided]"
+    async with httpx.AsyncClient(timeout=60) as client:
+        try:
+            r = await client.post(
+                f"{settings.gateway_url}/generate",
+                json={"question": prompt, "context": context},
+            )
+            r.raise_for_status()
+            return r.json().get("answer", "[no answer returned]")
+        except Exception as exc:
+            return f"[llm_generate error: {exc}]"
+
+
+_SAFE_PATH_PREFIXES = ("/tmp", "/var/tmp")
+_MAX_FILE_SIZE = 100_000  # 100 KB
+
+
+async def _exec_file_read(inp: dict) -> str:
+    import os
+    path = inp.get("path", "")
+    if not path:
+        return "[error: no path provided]"
+    abs_path = os.path.realpath(path)
+    if not any(abs_path.startswith(p) for p in _SAFE_PATH_PREFIXES):
+        return f"[error: path '{path}' is outside allowed directories (/tmp, /var/tmp)]"
+    try:
+        size = os.path.getsize(abs_path)
+        if size > _MAX_FILE_SIZE:
+            return f"[error: file too large ({size} bytes; limit {_MAX_FILE_SIZE})]"
+        with open(abs_path, encoding="utf-8", errors="replace") as f:
+            return f.read()
+    except FileNotFoundError:
+        return f"[error: file not found: {path}]"
+    except Exception as exc:
+        return f"[file_read error: {exc}]"
+
+
 async def _exec_code_exec(inp: dict) -> str:
     code = inp.get("code", "")
     if not code.strip():
@@ -211,7 +262,7 @@ async def _exec_code_exec(inp: dict) -> str:
         except Exception as exc:
             return f"[error: {exc}]"
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     try:
         return await asyncio.wait_for(loop.run_in_executor(None, run_sync), timeout=15.0)
     except asyncio.TimeoutError:
@@ -273,6 +324,7 @@ async def _exec_web_search(inp: dict | str) -> str:
     try:
         from duckduckgo_search import DDGS
         loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         results = await loop.run_in_executor(
             None,
             lambda: list(DDGS().text(query, max_results=5)),
@@ -325,7 +377,7 @@ def _run_custom_tool_sync(code: str, tool_input: dict) -> str:
 
 async def exec_custom_tool(code: str, tool_input: dict) -> str:
     """Run user-defined tool code in a thread pool with a 10-second timeout."""
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     with ThreadPoolExecutor(max_workers=1) as pool:
         try:
             return await asyncio.wait_for(
@@ -414,10 +466,20 @@ async def run_agent_stream(
             # Dispatch to built-in or custom tool
             if tool_name == "rag_query":
                 result = await _exec_rag_query(tool_input, settings)
+            elif tool_name == "llm_generate":
+                if "llm_generate" not in agent.tools:
+                    result = "[llm_generate is not enabled for this agent]"
+                else:
+                    result = await _exec_llm_generate(tool_input, settings)
             elif tool_name == "memory_read":
                 result = await _exec_memory_read(tool_input, agent.id, db)
             elif tool_name == "memory_write":
                 result = await _exec_memory_write(tool_input, agent.id, db)
+            elif tool_name == "file_read":
+                if "file_read" not in agent.tools:
+                    result = "[file_read is not enabled for this agent]"
+                else:
+                    result = await _exec_file_read(tool_input)
             elif tool_name == "code_exec":
                 if "code_exec" not in agent.tools:
                     result = "[code_exec is not enabled for this agent]"

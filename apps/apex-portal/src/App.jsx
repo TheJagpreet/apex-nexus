@@ -106,6 +106,8 @@ function ChatView() {
   const [amoebaState, setAmoebaState] = useState('visible')
   const prevMsgLen = useRef(messages.length)
   const bottomRef = useRef(null)
+  // AbortController for the active SSE agent stream — allows cleanup on unmount or re-send
+  const agentAbortRef = useRef(null)
 
   // Drive amoeba exit when the first message lands, reset on new empty session
   useEffect(() => {
@@ -124,6 +126,11 @@ function ChatView() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading, streamingAgent])
+
+  // Abort any in-flight agent SSE stream when the component unmounts
+  useEffect(() => {
+    return () => { agentAbortRef.current?.abort() }
+  }, [])
 
   async function handleSend({ text, files, collection, agent }) {
     if (!text.trim() && files.length === 0) return
@@ -201,9 +208,17 @@ function ChatView() {
           }
 
           setRunStep('agent')
-          const history = messages.map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content }))
+          const agentHistory = messages
+            .filter(m => m.role === 'user' || m.role === 'assistant')
+            .slice(-20)
+            .map(m => ({ role: m.role, content: m.content }))
           let streamedAnswer = ''
           const toolsCalled = []
+
+          // Abort any prior agent stream before starting a new one
+          agentAbortRef.current?.abort()
+          const abortCtrl = new AbortController()
+          agentAbortRef.current = abortCtrl
 
           // Show a live streaming bubble for this agent
           setStreamingAgent({ content: '', agent })
@@ -211,11 +226,11 @@ function ChatView() {
           try {
             for await (const event of runAgent(agent.id, {
               message: userContent,
-              history,
+              history: agentHistory,
               context: ragContext,
               collection: collection || undefined,
               session_id: sessionId,
-            })) {
+            }, abortCtrl.signal)) {
               if (event.type === 'token') {
                 flushSync(() => {
                   streamedAnswer += event.content
@@ -244,8 +259,12 @@ function ChatView() {
               }
             }
           } catch (err) {
-            streamedAnswer = `Could not reach apex-agents. Is it running on port 8003? (${err.message})`
-            setStreamingAgent({ content: streamedAnswer, agent })
+            if (err.name === 'AbortError') {
+              // Stream was intentionally cancelled — don't show an error
+            } else {
+              streamedAnswer = `Could not reach apex-agents. Is it running on port 8003? (${err.message})`
+              setStreamingAgent({ content: streamedAnswer, agent })
+            }
             setShowRunSteps(false)
           }
 

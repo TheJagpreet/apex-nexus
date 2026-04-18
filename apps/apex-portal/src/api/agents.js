@@ -109,11 +109,12 @@ export async function testTool(code, input = {}) {
  *   { type: 'done',     answer: string }
  *   { type: 'error',    detail: string }
  */
-export async function* runAgent(agentId, payload) {
+export async function* runAgent(agentId, payload, signal) {
   const res = await fetch(`${BASE}/agents/${agentId}/run`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+    signal,
   })
 
   if (!res.ok) {

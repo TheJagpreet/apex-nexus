@@ -63,9 +63,12 @@ export async function updateSessionTitle(token, sessionId, title) {
 export async function deleteSession(token, sessionId) {
   const res = await fetch(`${BASE}/sessions/${sessionId}`, {
     method: 'DELETE',
-    headers: authHeaders(token),
+    headers: { Authorization: `Bearer ${token}` },
   })
-  if (!res.ok) throw new Error(res.statusText)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }))
+    throw new Error(err.detail ?? res.statusText)
+  }
 }
 
 // Health
