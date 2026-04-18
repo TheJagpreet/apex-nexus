@@ -18,6 +18,7 @@ Five independently deployable microservices, unified in one monorepo, runnable l
 ## Table of Contents
 
 - [Demo](#demo)
+- [Screenshots](#screenshots)
 - [Architecture](#architecture)
 - [Services](#services)
 - [Prerequisites](#prerequisites)
@@ -32,6 +33,21 @@ Five independently deployable microservices, unified in one monorepo, runnable l
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
+
+---
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Login](docs/screenshots/login.png) | ![Chat — empty state](docs/screenshots/chat-empty.png) |
+| **Login** | **Chat — empty state** |
+| ![Chat — LLM response](docs/screenshots/chat-response.png) | ![Agent @mention](docs/screenshots/agent-mention.png) |
+| **Chat — LLM response** | **Agent @mention streaming** |
+| ![Knowledge Base](docs/screenshots/knowledge-base.png) | ![RAG response with sources](docs/screenshots/rag-response.png) |
+| **Knowledge Base — folder view** | **RAG response with cited sources** |
+| ![Agents config](docs/screenshots/agents-config.png) | ![Light mode](docs/screenshots/light-mode.png) |
+| **Agents — config panel** | **Light mode** |
 
 ---
 

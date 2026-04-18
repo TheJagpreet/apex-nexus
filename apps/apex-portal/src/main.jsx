@@ -14,7 +14,7 @@ import { SessionProvider } from './context/SessionContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <SessionProvider>
           <App />

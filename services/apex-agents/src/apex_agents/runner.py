@@ -33,7 +33,7 @@ from .schemas import RunRequest
 
 logger = logging.getLogger(__name__)
 
-_TOOL_CALL_RE = re.compile(r"<tool_call>(.*?)</tool_call>", re.DOTALL)
+_TOOL_CALL_RE = re.compile(r"<tool_call>(.*?)(?:</tool_call>|$)", re.DOTALL)
 
 # ---------------------------------------------------------------------------
 # Built-in tool registry
@@ -322,18 +322,38 @@ async def _exec_web_search(inp: dict | str) -> str:
     if not query:
         return "[error: no query provided]"
     try:
-        from duckduckgo_search import DDGS
-        loop = asyncio.get_event_loop()
-        loop = asyncio.get_running_loop()
-        results = await loop.run_in_executor(
-            None,
-            lambda: list(DDGS().text(query, max_results=5)),
-        )
+        import re as _re
+        import httpx
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            ),
+            "Accept": "text/html,application/xhtml+xml",
+            "Accept-Language": "en-US,en;q=0.9",
+        }
+        async with httpx.AsyncClient(headers=headers, follow_redirects=True, timeout=15) as client:
+            resp = await client.get(
+                "https://html.duckduckgo.com/html/",
+                params={"q": query},
+            )
+        html = resp.text
+        titles   = _re.findall(r'class="result__a"[^>]*>(.*?)</a>', html, _re.DOTALL)
+        urls     = _re.findall(r'class="result__url"[^>]*>\s*(.*?)\s*</a>', html, _re.DOTALL)
+        snippets = _re.findall(r'class="result__snippet"[^>]*>(.*?)</a>', html, _re.DOTALL)
+
+        import html as _html
+
+        def _strip(s: str) -> str:
+            return _html.unescape(_re.sub(r"<[^>]+>", "", s).strip())
+
+        results = list(zip(titles, urls, snippets))
         if not results:
             return f"[No results found for '{query}']"
         parts = []
-        for i, r in enumerate(results):
-            parts.append(f"{i + 1}. {r.get('title', '')}\n   {r.get('href', '')}\n   {r.get('body', '')}")
+        for i, (t, u, s) in enumerate(results[:5]):
+            parts.append(f"{i + 1}. {_strip(t)}\n   https://{_strip(u)}\n   {_strip(s)}")
         return "\n\n".join(parts)
     except Exception as exc:
         return f"[web_search error: {exc}]"
@@ -503,21 +523,21 @@ async def run_agent_stream(
 
         if tool_results:
             combined = "\n".join(tool_results)
-            # On the last hop, make the instruction even more explicit
-            is_last_hop = hop == MAX_HOPS - 2  # next iteration would be the last
-            instruction = (
-                "IMPORTANT: Do NOT call any tools. Do NOT output <tool_call> blocks.\n"
-                "Write your final answer to the user NOW, in plain prose only."
-                if is_last_hop else
-                "Now write your complete answer to the user in plain text. "
-                "Do NOT output any more <tool_call> blocks."
-            )
             messages.append(
-                HumanMessage(content=f"Tool results:\n{combined}\n\n{instruction}")
+                HumanMessage(
+                    content=(
+                        f"TOOL RESULTS (use these to answer the user):\n\n{combined}\n\n"
+                        "IMPORTANT: You now have the information needed. "
+                        "Write a complete, helpful answer to the user using the tool results above. "
+                        "Do NOT say you are unable to find information. "
+                        "Do NOT output any <tool_call> blocks. "
+                        "Respond in plain prose only."
+                    )
+                )
             )
 
-    # Strip any trailing tool-call XML from the final answer
-    _clean = re.sub(r"<tool_call>.*?</tool_call>", "", full_answer, flags=re.DOTALL).strip()
+    # Strip any trailing tool-call XML from the final answer (complete or incomplete tags)
+    _clean = re.sub(r"<tool_call>.*?(?:</tool_call>|$)", "", full_answer, flags=re.DOTALL).strip()
 
     if not _clean:
         if last_clean_prose:
@@ -555,5 +575,15 @@ async def run_agent_stream(
                 full_answer = "I was unable to produce a response. Please try again."
     else:
         full_answer = _clean
+
+    # If the model produced a defeatist response but we have real tool results,
+    # surface those results directly rather than showing "unable to find".
+    _DEFEATIST = re.compile(
+        r"\b(unable to|could not|cannot|couldn't|can't|not able to|failed to|"
+        r"no results|did not return|don't have access|no information)\b",
+        re.IGNORECASE,
+    )
+    if all_tool_results and _DEFEATIST.search(full_answer) and len(full_answer) < 600:
+        full_answer = "Here is what I found:\n\n" + "\n\n---\n\n".join(all_tool_results)
 
     yield {"type": "done", "answer": full_answer}

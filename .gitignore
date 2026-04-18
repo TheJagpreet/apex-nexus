@@ -67,6 +67,7 @@ services/apex-rag/data/
 *.swo
 .DS_Store
 Thumbs.db
+.playwright-mcp
 
 # ─── Logs ─────────────────────────────────────────────────────────────────────
 *.log
