@@ -1,23 +1,47 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { runAgent } from './api/agents'
 import { extractKeywords, generate } from './api/gateway'
 import { ingestToCollection, query, queryCollection } from './api/rag'
 import ActiveRunSteps from './components/ActiveRunSteps'
+import BgPattern from './components/BgPattern'
 import ChatBar from './components/ChatBar'
 import MessageBubble from './components/MessageBubble'
 import ScrambledText from './components/ScrambledText'
-import ServiceHealthCheck from './components/ServiceHealthCheck'
 import Sidebar from './components/Sidebar'
-import { AmoebaSpinner } from './components/Spinners'
-import ThemeToggle from './components/ThemeToggle'
 import { useAuth } from './context/AuthContext'
 import { useSession } from './context/SessionContext'
 import AgentsPage from './pages/AgentsPage'
 import KnowledgeBasePage from './pages/KnowledgeBasePage'
+import ToolsPage from './pages/ToolsPage'
 import LoginPage from './pages/LoginPage'
+import SettingsPage from './pages/SettingsPage'
 import SignupPage from './pages/SignupPage'
+
+function HistoryIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="1 4 1 10 7 10" />
+      <path d="M3.51 15a9 9 0 1 0 .49-3.5" />
+    </svg>
+  )
+}
+
+function PlusIconSm() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  )
+}
+
+const CHAT_PROMPTS = [
+  { eyebrow: 'Synthesize', text: 'Summarize this quarter\'s product brief and surface contradictions.' },
+  { eyebrow: 'Compare', text: 'Compare hybrid retrieval strategies across our knowledge base.' },
+  { eyebrow: 'Draft', text: 'Draft an architecture decision record for the migration plan.' },
+  { eyebrow: 'Audit', text: 'Audit the onboarding docs for outdated references.' },
+]
 
 // ---------------------------------------------------------------------------
 // Chat view
@@ -52,47 +76,20 @@ function simulateStream(text, onChunk, charsPerFrame = 3) {
   })
 }
 
-const THINKING_PHRASES = [
-  'Thinking…',
-  'Consulting the oracle…',
-  'Reticulating splines…',
-  'Asking the void…',
-  'Summoning neurons…',
-  'Herding tokens…',
-  'Calculating vibes…',
-  'Brewing ideas…',
-  'Untangling context…',
-  'Loading wisdom…',
-]
-
-function ThinkingBubble() {
-  const [index, setIndex] = useState(0)
-  const [visible, setVisible] = useState(true)
-
-  useEffect(() => {
-    const cycle = setInterval(() => {
-      setVisible(false)
-      setTimeout(() => {
-        setIndex(i => (i + 1) % THINKING_PHRASES.length)
-        setVisible(true)
-      }, 300)
-    }, 2200)
-    return () => clearInterval(cycle)
-  }, [])
-
-  return (
-    <div className="message message--thinking">
-      <div className="message__bubble">
-        <span className={`thinking-label thinking-label--cycling${visible ? ' thinking-label--in' : ' thinking-label--out'}`}>
-          {THINKING_PHRASES[index]}
-        </span>
-      </div>
-    </div>
-  )
-}
-
 function ChatView() {
-  const { activeSession, messages, setMessages, createSession, saveMessage, addLocalMessage, renameSession } = useSession()
+  const {
+    sessions,
+    sessionsLoading,
+    activeSession,
+    messages,
+    setMessages,
+    createSession,
+    loadSession,
+    saveMessage,
+    addLocalMessage,
+    renameSession,
+  } = useSession()
+  const navigate = useNavigate()
   const [loading, setLoading] = useState(false)
   // streamingAgent: { content, agent } | null — live agent SSE response
   const [streamingAgent, setStreamingAgent] = useState(null)
@@ -102,30 +99,38 @@ function ChatView() {
   const [runMode, setRunMode] = useState('direct')
   const [runStep, setRunStep] = useState(null)
   const [showRunSteps, setShowRunSteps] = useState(false)
-  // Amoeba idle state: 'visible' | 'exiting' | 'gone'
-  const [amoebaState, setAmoebaState] = useState('visible')
-  const prevMsgLen = useRef(messages.length)
+  // Prefill text for prompt cards
+  const [prefillText, setPrefillText] = useState('')
+  const [showHistory, setShowHistory] = useState(false)
   const bottomRef = useRef(null)
   // AbortController for the active SSE agent stream — allows cleanup on unmount or re-send
   const agentAbortRef = useRef(null)
 
-  // Drive amoeba exit when the first message lands, reset on new empty session
-  useEffect(() => {
-    const prev = prevMsgLen.current
-    prevMsgLen.current = messages.length
-    if (prev === 0 && messages.length > 0) {
-      setAmoebaState('exiting')
-      const t = setTimeout(() => setAmoebaState('gone'), 550)
-      return () => clearTimeout(t)
-    }
-    if (messages.length === 0) {
-      setAmoebaState('visible')
-    }
-  }, [messages.length])
+  const isEmpty = messages.length === 0
+
+  async function handleNewSession() {
+    await createSession()
+    navigate('/')
+  }
+
+  async function handleSelectSessionFromHistory(sessionId) {
+    await loadSession(sessionId)
+    setShowHistory(false)
+    navigate('/')
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading, streamingAgent])
+
+  useEffect(() => {
+    if (!showHistory) return
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setShowHistory(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [showHistory])
 
   // Abort any in-flight agent SSE stream when the component unmounts
   useEffect(() => {
@@ -369,16 +374,92 @@ function ChatView() {
     }
   }
 
+  const today = new Date()
+  const dateCrumb = `${String(today.getMonth() + 1).padStart(2, '0')} / ${String(today.getDate()).padStart(2, '0')} / ${String(today.getFullYear()).slice(-2)}`
+
   return (
     <div className="chat-view">
+      <BgPattern name="chat" />
+
+      {/* ── Topbar ── */}
+      <div className="topbar">
+        <div className="crumbs">
+          <span>Workspace</span>
+          <span className="sep">/</span>
+          <span>Chat</span>
+          <span className="sep">/</span>
+          <span className="here">{activeSession?.title || 'New session'}</span>
+        </div>
+        <div className="topbar-actions">
+          <button className="btn ghost" onClick={() => setShowHistory(true)}>
+            <HistoryIcon /> History
+          </button>
+          <button className="btn" onClick={handleNewSession}>
+            <PlusIconSm /> New session <span className="kbd">⌘N</span>
+          </button>
+        </div>
+      </div>
+
+      {showHistory && (
+        <div className="chat-history-overlay" onClick={() => setShowHistory(false)}>
+          <div className="chat-history-modal fade-in" onClick={e => e.stopPropagation()}>
+            <div className="chat-history-modal__header">
+              <div>
+                <div className="eyebrow">Session History</div>
+                <h2 className="serif chat-history-modal__title">All chats</h2>
+              </div>
+              <button className="btn ghost" onClick={() => setShowHistory(false)}>Close</button>
+            </div>
+
+            <div className="chat-history-modal__list">
+              {sessionsLoading && <p className="sidebar__hint">Loading sessions...</p>}
+              {!sessionsLoading && sessions.length === 0 && (
+                <p className="sidebar__hint">No sessions yet.</p>
+              )}
+              {!sessionsLoading && sessions.map(s => (
+                <button
+                  key={s.id}
+                  className={`chat-history-item${activeSession?.id === s.id ? ' chat-history-item--active' : ''}`}
+                  onClick={() => handleSelectSessionFromHistory(s.id)}
+                  title={s.title}
+                >
+                  <div className="chat-history-item__title">{s.title}</div>
+                  <div className="chat-history-item__meta mono">
+                    {activeSession?.id === s.id ? 'CURRENT' : s.id.slice(0, 8).toUpperCase()}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="messages">
         <div className="messages-inner">
-          {amoebaState !== 'gone' && (
-            <div className={`chat-empty-membrane${amoebaState === 'exiting' ? ' chat-empty-membrane--exit' : ''}`}>
-              <AmoebaSpinner size={140} />
-              <p className="chat-empty-membrane__label">
-                Ask anything. Attach a KB folder to ground answers in your documents.
+          {isEmpty && (
+            <div className="chat-empty-state fade-in">
+              <div className="eyebrow" style={{ marginBottom: 18 }}>New session · {dateCrumb}</div>
+              <h1 className="chat-empty-state__heading serif">
+                What would you like<br />
+                <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic' }}>to know today?</span>
+              </h1>
+              <p className="chat-empty-state__lede">
+                Ask grounded questions across your indexed knowledge base, or summon an agent with{' '}
+                <span className="mono" style={{ color: 'var(--text)', fontSize: 12 }}>@</span>{' '}
+                to run a workflow.
               </p>
+              <div className="chat-empty-state__grid">
+                {CHAT_PROMPTS.map((p, i) => (
+                  <button
+                    key={i}
+                    className="chat-prompt-card"
+                    onClick={() => setPrefillText(p.text)}
+                  >
+                    <div className="eyebrow" style={{ marginBottom: 8 }}>{p.eyebrow}</div>
+                    <div className="serif" style={{ fontSize: 16, color: 'var(--text)', lineHeight: 1.4 }}>{p.text}</div>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           {messages.map(msg => (
@@ -394,9 +475,20 @@ function ChatView() {
           )}
           {/* Fake-streamed response for direct/RAG paths */}
           {streamingText !== null && (
-            <div className="message message--assistant">
+            <div className="message message--assistant fade-in">
+              <div className="message__avatar message__avatar--apex">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L9 9 2 12l7 3 3 7 3-7 7-3-7-3z" />
+                </svg>
+              </div>
               <div className="message__stack">
-                <div className="message__bubble">
+                <div className="message__header">
+                  <span className="message__name">Apex</span>
+                  <span className="tag dot" style={{ color: 'var(--accent)', borderColor: 'var(--accent-line)' }}>
+                    {runMode === 'rag' ? 'RAG' : 'Direct'}
+                  </span>
+                </div>
+                <div className="message__body">
                   {streamingText
                     ? <ScrambledText text={streamingText} />
                     : <span className="thinking-label">Generating…</span>}
@@ -404,20 +496,36 @@ function ChatView() {
               </div>
             </div>
           )}
-          {/* ThinkingBubble only as last-resort fallback — should rarely appear */}
-          {loading && !streamingAgent && streamingText === null && !showRunSteps && <ThinkingBubble />}
+          {/* Simple fallback indicator while waiting for first SSE event */}
+          {loading && !streamingAgent && streamingText === null && !showRunSteps && (
+            <div className="message message--assistant fade-in">
+              <div className="message__avatar message__avatar--apex">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L9 9 2 12l7 3 3 7 3-7 7-3-7-3z" />
+                </svg>
+              </div>
+              <div className="message__stack">
+                <div className="message__header"><span className="message__name">Apex</span></div>
+                <div className="message__body"><span className="thinking-label">Thinking…</span></div>
+              </div>
+            </div>
+          )}
           {/* Agent streaming bubble — only render once run steps have faded */}
           {streamingAgent && !showRunSteps && (
-            <div className="message message--assistant">
+            <div className="message message--assistant fade-in">
+              <div className="message__avatar message__avatar--apex">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L9 9 2 12l7 3 3 7 3-7 7-3-7-3z" />
+                </svg>
+              </div>
               <div className="message__stack">
-                <div className="message__context-label">
-                  <span className="message__context-label__item" style={{ color: streamingAgent.agent.color }}>
-                    <span className="message__context-dot" style={{ background: streamingAgent.agent.color }} />
+                <div className="message__header">
+                  <span className="message__name">Apex</span>
+                  <span className="tag dot" style={{ color: 'var(--accent)', borderColor: 'var(--accent-line)' }}>
                     {streamingAgent.agent.name}
                   </span>
                 </div>
-                <div className="message__bubble"
-                  style={{ '--agent-color': streamingAgent.agent.color, borderColor: streamingAgent.agent.color }}>
+                <div className="message__body">
                   {stripToolCalls(streamingAgent.content)
                     ? <ScrambledText text={stripToolCalls(streamingAgent.content)} />
                     : <span className="thinking-label">Generating…</span>}
@@ -429,7 +537,11 @@ function ChatView() {
         </div>
       </div>
       <div className="chat-bar-outer">
-        <ChatBar onSend={handleSend} loading={loading} />
+        <ChatBar onSend={handleSend} loading={loading} prefillText={prefillText} onPrefillConsumed={() => setPrefillText('')} />
+        <div className="chat-bar-meta">
+          <span>GEMMA4:E2B · CONTEXT 8K · TEMP 0.4</span>
+          <span><span className="kbd">⏎</span> SEND · <span className="kbd">⇧⏎</span> NEW LINE · <span className="kbd">@</span> AGENT</span>
+        </div>
       </div>
     </div>
   )
@@ -453,7 +565,6 @@ function AppLayout({ children }) {
     <div className="app-layout">
       <Sidebar />
       <div className="app-layout__main">
-        <ThemeToggle theme={theme} onToggle={() => setTheme(t => (t === 'dark' ? 'light' : 'dark'))} />
         {children}
       </div>
     </div>
@@ -466,30 +577,8 @@ function AppLayout({ children }) {
 
 export default function App() {
   const { user, loading } = useAuth()
-  const [healthChecked, setHealthChecked] = useState(false)
-  const [showHealthCheck, setShowHealthCheck] = useState(true)
-
-  // Show health check on first visit (regardless of auth state)
-  useEffect(() => {
-    const checked = sessionStorage.getItem('apex_health_checked')
-    if (checked) {
-      setHealthChecked(true)
-      setShowHealthCheck(false)
-    }
-  }, [])
-
-  function handleHealthReady() {
-    setHealthChecked(true)
-    setShowHealthCheck(false)
-    sessionStorage.setItem('apex_health_checked', '1')
-  }
 
   if (loading) return <div className="app-loading">Loading…</div>
-
-  // Show health check overlay before anything else
-  if (showHealthCheck && !healthChecked) {
-    return <ServiceHealthCheck onReady={handleHealthReady} />
-  }
 
   if (!user) {
     return (
@@ -508,6 +597,8 @@ export default function App() {
       <Route path="/" element={<AppLayout><ChatView /></AppLayout>} />
       <Route path="/kb" element={<AppLayout><KnowledgeBasePage /></AppLayout>} />
       <Route path="/agents" element={<AppLayout><AgentsPage /></AppLayout>} />
+      <Route path="/tools" element={<AppLayout><ToolsPage /></AppLayout>} />
+      <Route path="/settings" element={<AppLayout><SettingsPage /></AppLayout>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

@@ -135,7 +135,9 @@ class FileInfo(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-def _ingest_file_to_collection(tmp_path: str, suffix: str, filename: str, collection: str) -> int:
+def _ingest_file_to_collection(
+    tmp_path: str, suffix: str, filename: str, collection: str, effort: str = "low"
+) -> int:
     """Run ingestion synchronously; return chunk count.
 
     Updates each document's ``source`` metadata to the original filename
@@ -147,11 +149,11 @@ def _ingest_file_to_collection(tmp_path: str, suffix: str, filename: str, collec
         total = 0
         for doc in docs:
             doc.metadata["source"] = filename
-            total += rag.ingest_document(doc)
+            total += rag.ingest_document(doc, effort=effort)
         return total
     doc = load_file(tmp_path)
     doc.metadata["source"] = filename
-    return rag.ingest_document(doc)
+    return rag.ingest_document(doc, effort=effort)
 
 
 def _sse(event: dict) -> str:
@@ -301,16 +303,21 @@ def delete_file(name: str, body: DeleteFileRequest) -> None:
 async def ingest_to_collection(
     name: str,
     file: UploadFile = File(...),
+    effort: str = Form("low"),
 ) -> StreamingResponse:
     """
     Ingest a file into a named collection with Server-Sent Events progress.
 
-    The client receives newline-delimited JSON events:
-      {"stage": "loading",   "progress": 10}
-      {"stage": "chunking",  "progress": 30}
-      {"stage": "embedding", "progress": 60}
-      {"stage": "storing",   "progress": 85}
-      {"stage": "done",      "progress": 100, "chunks": N, "filename": "..."}
+    effort: ``"low"``  — fast: chunk → embed → store.
+            ``"high"`` — rich: chunk → LLM tag each chunk → embed enriched text → store.
+
+    SSE events:
+      {"stage": "loading",   "progress": 5,  "filename": "..."}
+      {"stage": "chunking",  "progress": 20, "filename": "..."}
+      {"stage": "tagging",   "progress": 40, "filename": "..."}  ← high effort only
+      {"stage": "embedding", "progress": 70, "filename": "..."}
+      {"stage": "storing",   "progress": 88, "filename": "..."}
+      {"stage": "done",      "progress": 100, "chunks": N, "effort": "...", "filename": "..."}
       {"stage": "error",     "message": "..."}
     """
     suffix = Path(file.filename or "").suffix.lower()
@@ -319,6 +326,8 @@ async def ingest_to_collection(
             status_code=415,
             detail=f"Unsupported file type '{suffix}'. Accepted: {sorted(ACCEPTED_SUFFIXES)}",
         )
+    if effort not in ("low", "high"):
+        raise HTTPException(status_code=422, detail="effort must be 'low' or 'high'")
 
     mgr = get_collection_manager()
     if not mgr.collection_exists(name):
@@ -335,7 +344,7 @@ async def ingest_to_collection(
 
     async def _stream():
         try:
-            yield _sse({"stage": "loading", "progress": 10, "filename": filename})
+            yield _sse({"stage": "loading", "progress": 5, "filename": filename})
 
             from apex_rag.ingestion.loaders import load_csv, load_file
             if suffix == ".csv":
@@ -343,27 +352,31 @@ async def ingest_to_collection(
             else:
                 docs = [load_file(tmp_path)]
 
-            yield _sse({"stage": "chunking", "progress": 35, "filename": filename})
-
-            # Count expected chunks without ingesting yet
-            total_chunks = 0
-            for doc in docs:
-                total_chunks += len(rag.chunker.split(doc))
-
-            yield _sse({"stage": "embedding", "progress": 60, "filename": filename})
-            yield _sse({"stage": "storing", "progress": 80, "filename": filename})
-
             # Fix source metadata to use original filename, not temp path
             for doc in docs:
                 doc.metadata["source"] = filename
 
-            # Actual ingest (chunking + embedding + storing)
+            yield _sse({"stage": "chunking", "progress": 20, "filename": filename})
+
+            if effort == "high":
+                yield _sse({"stage": "tagging", "progress": 40, "filename": filename})
+
+            yield _sse({"stage": "embedding", "progress": 70, "filename": filename})
+            yield _sse({"stage": "storing", "progress": 88, "filename": filename})
+
+            # Actual ingest — chunking + (optional tagging) + embedding + storing
             ingested = 0
             for doc in docs:
-                ingested += rag.ingest_document(doc)
+                ingested += rag.ingest_document(doc, effort=effort)
 
             os.unlink(tmp_path)
-            yield _sse({"stage": "done", "progress": 100, "chunks": ingested, "filename": filename})
+            yield _sse({
+                "stage": "done",
+                "progress": 100,
+                "chunks": ingested,
+                "effort": effort,
+                "filename": filename,
+            })
 
         except Exception as exc:
             try:

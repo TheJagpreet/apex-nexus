@@ -129,19 +129,25 @@ Delete all chunks for a specific source file.
 Ingest a file into a named collection with SSE progress stream.
 
 **Body** `multipart/form-data`
-- `file`: the file to ingest
+- `file`: the file to ingest (`.txt`, `.md`, `.pdf`, `.html`, `.csv`)
+- `effort` *(optional, default `low`)*: ingestion quality level
+  - `low` — fast: chunk → embed → store. No LLM call.
+  - `high` — rich: LLM generates 6–10 semantic tags per chunk before embedding. Tags are appended to the chunk text so the embedding vector covers both raw content and semantic concepts. Slower (one Ollama call per chunk) but produces better retrieval, especially for large or dense documents.
 
 **Response** `200` — `text/event-stream`
 
 SSE events (newline-delimited JSON):
 ```
-data: {"stage": "loading",   "progress": 10, "filename": "doc.pdf"}
-data: {"stage": "chunking",  "progress": 35, "filename": "doc.pdf"}
-data: {"stage": "embedding", "progress": 60, "filename": "doc.pdf"}
-data: {"stage": "storing",   "progress": 80, "filename": "doc.pdf"}
-data: {"stage": "done",      "progress": 100, "chunks": 42, "filename": "doc.pdf"}
+data: {"stage": "loading",   "progress": 5,  "filename": "doc.pdf"}
+data: {"stage": "chunking",  "progress": 20, "filename": "doc.pdf"}
+data: {"stage": "tagging",   "progress": 40, "filename": "doc.pdf"}   ← high effort only
+data: {"stage": "embedding", "progress": 70, "filename": "doc.pdf"}
+data: {"stage": "storing",   "progress": 88, "filename": "doc.pdf"}
+data: {"stage": "done",      "progress": 100, "chunks": 42, "effort": "high", "filename": "doc.pdf"}
 data: {"stage": "error",     "message": "...", "filename": "doc.pdf"}
 ```
+
+**Errors**: `422` if `effort` is not `low` or `high`.
 
 ---
 

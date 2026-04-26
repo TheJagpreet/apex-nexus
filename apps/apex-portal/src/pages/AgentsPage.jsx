@@ -1,16 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+// ─────────────────────────────────────────────────────────────────────────────
+// AgentsPage — nexus-style list + detail layout
+// Tools have been moved to ToolsPage (/tools)
+// ─────────────────────────────────────────────────────────────────────────────
+import { useCallback, useEffect, useState } from 'react'
 import {
-  createAgent, createTool, deleteAgent, deleteTool,
-  getAgent, listAgents, listTools, testTool, updateAgent, updateTool,
+  createAgent, deleteAgent,
+  getAgent, listAgents, listTools, updateAgent,
 } from '../api/agents'
+import BgPattern from '../components/BgPattern'
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const LIST_MIN = 160
-const LIST_MAX = 380
-const LIST_DEFAULT = 240
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const COLOR_SWATCHES = [
   '#6366f1', '#8b5cf6', '#06b6d4', '#10b981',
@@ -18,24 +17,11 @@ const COLOR_SWATCHES = [
   '#14b8a6', '#3b82f6', '#a855f7', '#84cc16',
 ]
 
-const TOOL_TEMPLATE = `def run(input: dict) -> str:
-    """
-    Called by the agent when it uses this tool.
-    'input' is a dict the LLM passes based on your description.
-    Return a plain string — the agent sees this as the tool result.
-    """
-    value = input.get("query", "")
-    # TODO: implement your logic here
-    return f"Result for: {value}"
-`
+// ── Icons ─────────────────────────────────────────────────────────────────────
 
-// ---------------------------------------------------------------------------
-// Icons
-// ---------------------------------------------------------------------------
-
-function AgentIcon() {
+function AgentIcon({ size = 16 }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="8" r="4" />
       <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
@@ -52,16 +38,14 @@ function ToolIcon() {
   )
 }
 
-function LockIcon() {
+function PlusIcon() {
   return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   )
 }
-
 function TrashIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -72,16 +56,15 @@ function TrashIcon() {
     </svg>
   )
 }
-
-function PlusIcon() {
+function HistoryIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="1 4 1 10 7 10" />
+      <path d="M3.51 15a9 9 0 1 0 .49-3.5" />
     </svg>
   )
 }
-
 function PlayIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
@@ -89,47 +72,92 @@ function PlayIcon() {
     </svg>
   )
 }
-
-// ---------------------------------------------------------------------------
-// Blank forms
-// ---------------------------------------------------------------------------
-
-function blankAgentForm() {
-  return { id: '', name: '', description: '', color: '#6366f1', system_prompt: '', tools: [], handoffs: [] }
-}
-
-function blankToolForm() {
-  return { id: '', name: '', description: '', code: TOOL_TEMPLATE }
-}
-
-// ---------------------------------------------------------------------------
-// HandoffRow
-// ---------------------------------------------------------------------------
-
-function HandoffRow({ handoff, agents, onChange, onRemove }) {
+function LockIcon() {
   return (
-    <div className="agent-handoff-row">
-      <input className="agent-field__input" placeholder="Button label"
-        value={handoff.label} onChange={e => onChange({ ...handoff, label: e.target.value })} />
-      <select className="agent-field__select" value={handoff.agent_id}
-        onChange={e => onChange({ ...handoff, agent_id: e.target.value })}>
-        <option value="">— target agent —</option>
-        {agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-      </select>
-      <input className="agent-field__input" placeholder="Prompt (optional)"
-        value={handoff.prompt} onChange={e => onChange({ ...handoff, prompt: e.target.value })} />
-      <button className="kb-icon-btn kb-icon-btn--danger" onClick={onRemove} title="Remove">
-        <TrashIcon />
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  )
+}
+
+// ── Graph diagram (nexus-style) ───────────────────────────────────────────────
+
+function GraphDiagram({ tools = [] }) {
+  const nodes = [
+    { x: 60, y: 80, label: 'start', kind: 'io' },
+    { x: 210, y: 80, label: 'decompose', kind: 'llm' },
+    { x: 380, y: 30, label: tools[0] || 'kb.query', kind: 'tool' },
+    { x: 380, y: 130, label: tools[1] || 'web.search', kind: 'tool' },
+    { x: 540, y: 80, label: 'synthesize', kind: 'llm' },
+    { x: 680, y: 80, label: 'end', kind: 'io' },
+  ]
+  const edges = [[0, 1], [1, 2], [1, 3], [2, 4], [3, 4], [4, 5]]
+  const N = k => nodes[k]
+  return (
+    <svg viewBox="0 0 740 200" width="100%" height="160" style={{ display: 'block' }}>
+      {edges.map(([a, b], i) => {
+        const A = N(a), B = N(b)
+        return (
+          <path key={i}
+            d={`M ${A.x + 54} ${A.y + 18} C ${(A.x + B.x) / 2 + 54} ${A.y + 18}, ${(A.x + B.x) / 2} ${B.y + 18}, ${B.x} ${B.y + 18}`}
+            fill="none" stroke="#2a2a30" strokeWidth="1" />
+        )
+      })}
+      {nodes.map((n, i) => (
+        <g key={i}>
+          <rect x={n.x} y={n.y} width="54" height="36" rx="5"
+            fill="#0e0e10"
+            stroke={n.kind === 'llm' ? 'oklch(0.78 0.08 70 / 0.45)' : '#2a2a30'}
+            strokeWidth="1" />
+          <text x={n.x + 27} y={n.y + 22} textAnchor="middle"
+            fill="#6e6c64" fontSize="9" fontFamily="JetBrains Mono, monospace">
+            {n.label.length > 9 ? n.label.slice(0, 9) : n.label}
+          </text>
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+// ── Stat cell ─────────────────────────────────────────────────────────────────
+
+function AgStat({ label, value }) {
+  return (
+    <div className="ag-stat">
+      <div className="eyebrow">{label}</div>
+      <div className="ag-stat__value serif">{value}</div>
+    </div>
+  )
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+
+function AgentsEmpty({ onNew }) {
+  return (
+    <div className="kb-empty-state">
+      <div className="kb-empty-state__icon"><AgentIcon size={28} /></div>
+      <h2 className="serif" style={{ fontSize: 22, fontWeight: 400, margin: 0 }}>No agents yet.</h2>
+      <p style={{ color: 'var(--text-secondary)', marginTop: 8, maxWidth: 400, textAlign: 'center' }}>
+        Compose a graph of tools and prompts. Apex registers the{' '}
+        <code className="mono" style={{ fontSize: 12, color: 'var(--text)' }}>@mention</code>,
+        exposes an SSE endpoint, and streams every step.
+      </p>
+      <button className="btn primary" style={{ marginTop: 20 }} onClick={onNew}>
+        <PlusIcon /> Create agent
       </button>
     </div>
   )
 }
 
-// ---------------------------------------------------------------------------
-// AgentsTab
-// ---------------------------------------------------------------------------
+function blankAgentForm() {
+  return { id: '', name: '', description: '', color: '#6366f1', system_prompt: '', tools: [], handoffs: [] }
+}
 
-function AgentsTab({ tools }) {
+// ── Main page ─────────────────────────────────────────────────────────────────
+
+export default function AgentsPage() {
   const [agents, setAgents] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [form, setForm] = useState(null)
@@ -137,50 +165,37 @@ function AgentsTab({ tools }) {
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [error, setError] = useState(null)
-  const [listWidth, setListWidth] = useState(() => {
-    const s = localStorage.getItem('apex_agents_list_width')
-    return s ? parseInt(s, 10) : LIST_DEFAULT
-  })
-  const isDraggingPane = useRef(false)
-  const startPaneX = useRef(0)
-  const startPaneWidth = useRef(listWidth)
+  const [tools, setTools] = useState([])
 
   const loadAgents = useCallback(async () => {
-    try { setAgents(await listAgents()) } catch (err) { setError(err.message) }
-  }, [])
+    try {
+      const list = await listAgents()
+      setAgents(list)
+      // Auto-select first agent if none selected and not creating new
+      if (list.length > 0 && !selectedId && !isNew) {
+        const first = list[0]
+        setSelectedId(first.id)
+        try {
+          const d = await getAgent(first.id)
+          setForm({ id: d.id, name: d.name, description: d.description, color: d.color,
+            system_prompt: d.system_prompt, tools: d.tools, handoffs: d.handoffs, is_builtin: d.is_builtin })
+        } catch { /* ignore */ }
+      }
+    } catch (err) { setError(err.message) }
+  }, [selectedId, isNew])
 
-  useEffect(() => { loadAgents() }, [loadAgents])
-
-  function onPaneResizeDown(e) {
-    e.preventDefault()
-    isDraggingPane.current = true
-    startPaneX.current = e.clientX
-    startPaneWidth.current = listWidth
-    const onMove = e => {
-      if (!isDraggingPane.current) return
-      const newW = Math.min(LIST_MAX, Math.max(LIST_MIN, startPaneWidth.current + e.clientX - startPaneX.current))
-      setListWidth(newW)
-      localStorage.setItem('apex_agents_list_width', String(newW))
-    }
-    const onUp = () => {
-      isDraggingPane.current = false
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-    }
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-  }
+  useEffect(() => { loadAgents() }, [])
+  useEffect(() => { listTools().then(setTools).catch(() => {}) }, [])
 
   async function handleSelect(id) {
     setError(null); setIsNew(false); setSelectedId(id)
     try {
       const d = await getAgent(id)
-      setForm({ id: d.id, name: d.name, description: d.description, color: d.color,
-        system_prompt: d.system_prompt, tools: d.tools, handoffs: d.handoffs, is_builtin: d.is_builtin })
+      setForm({
+        id: d.id, name: d.name, description: d.description, color: d.color,
+        system_prompt: d.system_prompt, tools: d.tools, handoffs: d.handoffs,
+        is_builtin: d.is_builtin,
+      })
     } catch (err) { setError(err.message) }
   }
 
@@ -197,28 +212,20 @@ function AgentsTab({ tools }) {
     }))
   }
 
-  function addHandoff() {
-    setForm(f => ({ ...f, handoffs: [...f.handoffs, { label: '', agent_id: '', prompt: '' }] }))
-  }
-
-  function updateHandoff(i, val) {
-    setForm(f => { const hs = [...f.handoffs]; hs[i] = val; return { ...f, handoffs: hs } })
-  }
-
-  function removeHandoff(i) {
-    setForm(f => ({ ...f, handoffs: f.handoffs.filter((_, idx) => idx !== i) }))
-  }
-
   async function handleSave(e) {
     e.preventDefault(); setError(null); setSaving(true)
     try {
       if (isNew) {
-        await createAgent({ id: form.id, name: form.name, description: form.description,
-          color: form.color, system_prompt: form.system_prompt, tools: form.tools, handoffs: form.handoffs })
+        await createAgent({
+          id: form.id, name: form.name, description: form.description,
+          color: form.color, system_prompt: form.system_prompt, tools: form.tools, handoffs: form.handoffs,
+        })
         setIsNew(false); setSelectedId(form.id)
       } else {
-        await updateAgent(selectedId, { name: form.name, description: form.description,
-          color: form.color, system_prompt: form.system_prompt, tools: form.tools, handoffs: form.handoffs })
+        await updateAgent(selectedId, {
+          name: form.name, description: form.description, color: form.color,
+          system_prompt: form.system_prompt, tools: form.tools, handoffs: form.handoffs,
+        })
       }
       await loadAgents()
     } catch (err) { setError(err.message) } finally { setSaving(false) }
@@ -234,420 +241,227 @@ function AgentsTab({ tools }) {
   }
 
   return (
-    <div className="agents-split">
-      {/* Left pane */}
-      <aside className="agents-list" style={{ width: listWidth }}>
-        <div className="agents-list__header">
-          <span className="agents-list__title">Agents</span>
-          <button className="kb-icon-btn" onClick={handleNew} title="New agent"><PlusIcon /></button>
+    <div className="agents-page-v2">
+      <BgPattern name="agents" />
+
+      {/* ── Topbar ── */}
+      <div className="topbar">
+        <div className="crumbs">
+          <span>Workspace</span>
+          <span className="sep">/</span>
+          <span>Agents</span>
+          {form && !isNew && (
+            <>
+              <span className="sep">/</span>
+              <span className="here">{form.name}</span>
+            </>
+          )}
         </div>
-        <div className="agents-list__items">
-          {agents.length === 0 && <p className="kb-hint">No agents yet.</p>}
-          {agents.map(a => (
-            <div key={a.id}
-              className={`agents-list__item${selectedId === a.id && !isNew ? ' agents-list__item--active' : ''}`}
-              onClick={() => handleSelect(a.id)}>
-              <span className="agents-list__dot" style={{ background: a.color }} />
-              <div className="agents-list__info">
-                <span className="agents-list__name">{a.name}</span>
-                <span className="agents-list__desc">{a.description}</span>
-              </div>
-              {a.is_builtin && <span className="agents-list__lock" title="Built-in"><LockIcon /></span>}
-            </div>
-          ))}
+        <div className="topbar-actions">
+          <button type="button" className="btn ghost"><HistoryIcon /> Run history</button>
+          <button type="button" className="btn primary" onClick={handleNew}><PlusIcon /> New agent</button>
         </div>
-        <div className="agents-list__resize-handle" onMouseDown={onPaneResizeDown} />
-      </aside>
-
-      {/* Right pane — editor */}
-      <main className="agents-editor">
-        {!form ? (
-          <div className="kb-empty">
-            <p>Select an agent to configure, or <button className="agent-link-btn" onClick={handleNew}>create a new one</button>.</p>
-          </div>
-        ) : (
-          <form className="agent-form" onSubmit={handleSave}>
-            <div className="agent-form__header">
-              <div className="agents-list__dot agents-list__dot--lg" style={{ background: form.color }} />
-              <h2 className="agent-form__title">{isNew ? 'New Agent' : form.name}</h2>
-              {form.is_builtin && <span className="agent-builtin-badge">built-in</span>}
-            </div>
-
-            {error && <p className="agent-form__error">{error}</p>}
-
-            {isNew && (
-              <div className="agent-field">
-                <label className="agent-field__label">ID <span className="agent-field__hint">(slug, e.g. my-agent)</span></label>
-                <input className="agent-field__input" value={form.id}
-                  onChange={e => setField('id', e.target.value.replace(/[^a-z0-9_-]/g, ''))}
-                  placeholder="my-agent" required pattern="[a-z0-9_\-]+" />
-              </div>
-            )}
-
-            <div className="agent-field">
-              <label className="agent-field__label">Name</label>
-              <input className="agent-field__input" value={form.name}
-                onChange={e => setField('name', e.target.value)} required />
-            </div>
-
-            <div className="agent-field">
-              <label className="agent-field__label">Description</label>
-              <input className="agent-field__input" value={form.description}
-                onChange={e => setField('description', e.target.value)} placeholder="One-line purpose" />
-            </div>
-
-            <div className="agent-field">
-              <label className="agent-field__label">Color</label>
-              <div className="agent-swatches">
-                {COLOR_SWATCHES.map(c => (
-                  <button key={c} type="button"
-                    className={`agent-swatch${form.color === c ? ' agent-swatch--active' : ''}`}
-                    style={{ background: c }} onClick={() => setField('color', c)} title={c} />
-                ))}
-              </div>
-            </div>
-
-            <div className="agent-field agent-field--grow">
-              <label className="agent-field__label">System Prompt</label>
-              <textarea className="agent-prompt-textarea" value={form.system_prompt}
-                onChange={e => setField('system_prompt', e.target.value)}
-                placeholder="You are a helpful agent..." rows={12} />
-            </div>
-
-            <div className="agent-field">
-              <label className="agent-field__label">Tools</label>
-              <div className="agent-tools">
-                {tools.map(t => (
-                  <label key={t.id} className="agent-tool">
-                    <input type="checkbox" checked={form.tools.includes(t.id)}
-                      onChange={() => toggleTool(t.id)} />
-                    <span className="agent-tool__name">{t.name}</span>
-                    <span className="agent-tool__desc">{t.description}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="agent-field">
-              <div className="agent-field__row">
-                <label className="agent-field__label">Handoffs</label>
-                <button type="button" className="kb-icon-btn" onClick={addHandoff} title="Add handoff"><PlusIcon /></button>
-              </div>
-              {form.handoffs.length === 0 && <p className="kb-hint" style={{ padding: '4px 0' }}>No handoffs configured.</p>}
-              <div className="agent-handoffs">
-                {form.handoffs.map((h, i) => (
-                  <HandoffRow key={i} handoff={h}
-                    agents={agents.filter(a => a.id !== (isNew ? '' : selectedId))}
-                    onChange={v => updateHandoff(i, v)} onRemove={() => removeHandoff(i)} />
-                ))}
-              </div>
-            </div>
-
-            <div className="agent-form__footer">
-              <button type="submit" className="agent-btn agent-btn--primary" disabled={saving}>
-                {saving ? 'Saving…' : isNew ? 'Create Agent' : 'Save Changes'}
-              </button>
-              {!isNew && (
-                <button type="button" className="agent-btn agent-btn--danger"
-                  onClick={handleDelete} disabled={deleting || form.is_builtin}
-                  title={form.is_builtin ? 'Built-in agents cannot be deleted' : 'Delete agent'}>
-                  {deleting ? 'Deleting…' : 'Delete'}
-                </button>
-              )}
-            </div>
-          </form>
-        )}
-      </main>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// ToolsTab
-// ---------------------------------------------------------------------------
-
-function ToolsTab() {
-  const [tools, setTools] = useState([])
-  const [selectedId, setSelectedId] = useState(null)
-  const [form, setForm] = useState(null)       // null = nothing selected
-  const [isNew, setIsNew] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [error, setError] = useState(null)
-  // Test panel
-  const [testInput, setTestInput] = useState('{}')
-  const [testResult, setTestResult] = useState(null)   // { success, output, error }
-  const [testing, setTesting] = useState(false)
-  const [testInputError, setTestInputError] = useState(null)
-  const [listWidth, setListWidth] = useState(() => {
-    const s = localStorage.getItem('apex_tools_list_width')
-    return s ? parseInt(s, 10) : LIST_DEFAULT
-  })
-  const isDraggingPane = useRef(false)
-  const startPaneX = useRef(0)
-  const startPaneWidth = useRef(listWidth)
-
-  const loadTools = useCallback(async () => {
-    try { setTools(await listTools()) } catch (err) { setError(err.message) }
-  }, [])
-
-  useEffect(() => { loadTools() }, [loadTools])
-
-  function onPaneResizeDown(e) {
-    e.preventDefault()
-    isDraggingPane.current = true
-    startPaneX.current = e.clientX
-    startPaneWidth.current = listWidth
-    const onMove = e => {
-      if (!isDraggingPane.current) return
-      const newW = Math.min(LIST_MAX, Math.max(LIST_MIN, startPaneWidth.current + e.clientX - startPaneX.current))
-      setListWidth(newW)
-      localStorage.setItem('apex_tools_list_width', String(newW))
-    }
-    const onUp = () => {
-      isDraggingPane.current = false
-      document.removeEventListener('mousemove', onMove)
-      document.removeEventListener('mouseup', onUp)
-      document.body.style.cursor = ''
-      document.body.style.userSelect = ''
-    }
-    document.addEventListener('mousemove', onMove)
-    document.addEventListener('mouseup', onUp)
-    document.body.style.cursor = 'col-resize'
-    document.body.style.userSelect = 'none'
-  }
-
-  function handleSelect(tool) {
-    setError(null); setIsNew(false); setSelectedId(tool.id)
-    setTestResult(null); setTestInputError(null)
-    setForm({ id: tool.id, name: tool.name, description: tool.description,
-      code: tool.code, is_builtin: tool.is_builtin })
-  }
-
-  function handleNew() {
-    setError(null); setSelectedId(null); setIsNew(true)
-    setTestResult(null); setTestInputError(null)
-    setForm(blankToolForm())
-  }
-
-  function setField(key, val) { setForm(f => ({ ...f, [key]: val })) }
-
-  async function handleTest() {
-    setTestInputError(null); setTestResult(null)
-    let parsed = {}
-    try { parsed = JSON.parse(testInput) } catch {
-      setTestInputError('Invalid JSON — fix the input and try again.')
-      return
-    }
-    setTesting(true)
-    try {
-      const res = await testTool(form.code, parsed)
-      setTestResult(res)
-    } catch (err) {
-      setTestResult({ success: false, output: '', error: err.message })
-    } finally { setTesting(false) }
-  }
-
-  async function handleSave(e) {
-    e.preventDefault(); setError(null); setSaving(true)
-    try {
-      if (isNew) {
-        await createTool({ id: form.id, name: form.name, description: form.description, code: form.code })
-        setIsNew(false); setSelectedId(form.id)
-      } else {
-        await updateTool(selectedId, { name: form.name, description: form.description, code: form.code })
-      }
-      await loadTools()
-    } catch (err) { setError(err.message) } finally { setSaving(false) }
-  }
-
-  async function handleDelete() {
-    if (!selectedId || form?.is_builtin) return
-    if (!confirm(`Delete tool "${form.name}"? This cannot be undone.`)) return
-    setDeleting(true)
-    try {
-      await deleteTool(selectedId); setSelectedId(null); setForm(null); await loadTools()
-    } catch (err) { setError(err.message) } finally { setDeleting(false) }
-  }
-
-  return (
-    <div className="agents-split">
-      {/* Left pane */}
-      <aside className="agents-list" style={{ width: listWidth }}>
-        <div className="agents-list__header">
-          <span className="agents-list__title">Tools</span>
-          <button className="kb-icon-btn" onClick={handleNew} title="New tool"><PlusIcon /></button>
-        </div>
-        <div className="agents-list__items">
-          {tools.length === 0 && <p className="kb-hint">No tools yet.</p>}
-          {tools.map(t => (
-            <div key={t.id}
-              className={`agents-list__item${selectedId === t.id && !isNew ? ' agents-list__item--active' : ''}${t.is_builtin ? ' agents-list__item--builtin' : ''}`}
-              onClick={() => handleSelect(t)}>
-              <span className="agents-list__dot agents-list__dot--tool"
-                style={{ background: t.is_builtin ? '#475569' : '#6366f1' }} />
-              <div className="agents-list__info">
-                <span className="agents-list__name">{t.name}</span>
-                <span className="agents-list__desc">{t.description}</span>
-              </div>
-              {t.is_builtin && <span className="agents-list__lock" title="Built-in tool"><LockIcon /></span>}
-            </div>
-          ))}
-        </div>
-        <div className="agents-list__resize-handle" onMouseDown={onPaneResizeDown} />
-      </aside>
-
-      {/* Right pane — tool editor + playground */}
-      <main className="agents-editor">
-        {!form ? (
-          <div className="kb-empty">
-            <p>Select a tool to view it, or <button className="agent-link-btn" onClick={handleNew}>add a custom tool</button>.</p>
-          </div>
-        ) : form.is_builtin ? (
-          /* Built-in tool — read-only info */
-          <div className="tool-builtin-info">
-            <div className="agent-form__header">
-              <span className="agents-list__dot" style={{ background: '#475569' }} />
-              <h2 className="agent-form__title">{form.name}</h2>
-              <span className="agent-builtin-badge">built-in</span>
-            </div>
-            <p className="tool-builtin-desc">{form.description}</p>
-            <p className="kb-hint" style={{ marginTop: '1rem' }}>
-              Built-in tools are provided by apex-agents and cannot be edited. Enable them on any agent via the Agents tab.
-            </p>
-          </div>
-        ) : (
-          /* Custom tool editor + playground */
-          <form className="agent-form" onSubmit={handleSave}>
-            <div className="agent-form__header">
-              <span className="agents-list__dot" style={{ background: '#6366f1' }} />
-              <h2 className="agent-form__title">{isNew ? 'New Tool' : form.name}</h2>
-            </div>
-
-            {error && <p className="agent-form__error">{error}</p>}
-
-            {isNew && (
-              <div className="agent-field">
-                <label className="agent-field__label">ID <span className="agent-field__hint">(slug, e.g. my-tool)</span></label>
-                <input className="agent-field__input" value={form.id}
-                  onChange={e => setField('id', e.target.value.replace(/[^a-z0-9_-]/g, ''))}
-                  placeholder="my-tool" required pattern="[a-z0-9_\-]+" />
-              </div>
-            )}
-
-            <div className="agent-field">
-              <label className="agent-field__label">Name</label>
-              <input className="agent-field__input" value={form.name}
-                onChange={e => setField('name', e.target.value)} required />
-            </div>
-
-            <div className="agent-field">
-              <label className="agent-field__label">
-                Description
-                <span className="agent-field__hint"> — the agent reads this to decide when to call the tool</span>
-              </label>
-              <input className="agent-field__input" value={form.description}
-                onChange={e => setField('description', e.target.value)}
-                placeholder="What does this tool do and what input does it expect?" />
-            </div>
-
-            {/* Code editor */}
-            <div className="agent-field agent-field--grow">
-              <label className="agent-field__label">
-                Tool Code
-                <span className="agent-field__hint"> — Python · define <code>def run(input: dict) -&gt; str</code></span>
-              </label>
-              <textarea className="agent-prompt-textarea tool-code-editor" value={form.code}
-                onChange={e => setField('code', e.target.value)}
-                placeholder={TOOL_TEMPLATE} rows={14} spellCheck={false} />
-            </div>
-
-            {/* Test playground */}
-            <div className="tool-playground">
-              <div className="tool-playground__header">
-                <span className="tool-playground__title">Test Playground</span>
-                <span className="tool-playground__hint">Run your tool code before saving</span>
-              </div>
-
-              <div className="tool-playground__input-row">
-                <div className="tool-playground__input-col">
-                  <label className="agent-field__label">Input JSON</label>
-                  <textarea className="agent-prompt-textarea tool-playground__json"
-                    value={testInput} onChange={e => setTestInput(e.target.value)}
-                    rows={4} spellCheck={false} placeholder='{"query": "hello"}' />
-                  {testInputError && <p className="agent-form__error" style={{ marginTop: 4 }}>{testInputError}</p>}
-                </div>
-              </div>
-
-              <button type="button" className="tool-playground__run-btn"
-                onClick={handleTest} disabled={testing}>
-                <PlayIcon />
-                {testing ? 'Running…' : 'Run Test'}
-              </button>
-
-              {testResult && (
-                <div className={`tool-playground__result${testResult.success ? ' tool-playground__result--ok' : ' tool-playground__result--err'}`}>
-                  <span className="tool-playground__result-label">
-                    {testResult.success ? 'Output' : 'Error'}
-                  </span>
-                  <pre className="tool-playground__result-pre">
-                    {testResult.success ? testResult.output : testResult.error}
-                  </pre>
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="agent-form__footer">
-              <button type="submit" className="agent-btn agent-btn--primary" disabled={saving}>
-                {saving ? 'Saving…' : isNew ? 'Save Tool' : 'Save Changes'}
-              </button>
-              {!isNew && (
-                <button type="button" className="agent-btn agent-btn--danger"
-                  onClick={handleDelete} disabled={deleting}>
-                  {deleting ? 'Deleting…' : 'Delete'}
-                </button>
-              )}
-            </div>
-          </form>
-        )}
-      </main>
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Main page — tabs
-// ---------------------------------------------------------------------------
-
-export default function AgentsPage() {
-  const [tab, setTab] = useState('agents')   // 'agents' | 'tools'
-  const [tools, setTools] = useState([])
-
-  // Load tools once so AgentsTab can show checkboxes immediately
-  useEffect(() => {
-    listTools().then(setTools).catch(() => {})
-  }, [])
-
-  return (
-    <div className="agents-page">
-      {/* Tab bar */}
-      <div className="agents-tabs">
-        <button
-          className={`agents-tab${tab === 'agents' ? ' agents-tab--active' : ''}`}
-          onClick={() => setTab('agents')}>
-          <AgentIcon /> Agents
-        </button>
-        <button
-          className={`agents-tab${tab === 'tools' ? ' agents-tab--active' : ''}`}
-          onClick={() => setTab('tools')}>
-          <ToolIcon /> Tools
-        </button>
       </div>
 
-      {/* Tab content */}
-      <div className="agents-tab-content">
-        {tab === 'agents' ? <AgentsTab tools={tools} /> : <ToolsTab />}
+      {/* ── Scrollable body ── */}
+      <div className="ag-scroll">
+        {/* Page head */}
+        <div className="page-head">
+          <div className="eyebrow">LangGraph Agent Runtime</div>
+          <h1>Workflows that reason.</h1>
+          <p className="lede">
+            Each agent is a graph of tools, prompts, and decision nodes — composed once,
+            summoned with{' '}
+            <span className="mono" style={{ color: 'var(--text)', fontSize: 13 }}>@</span>,
+            streamed live over SSE.
+          </p>
+        </div>
+
+        {/* Two-col body */}
+        <div className="ag-body">
+
+          {/* ── Left: agent list ── */}
+          <aside className="ag-aside">
+            <div className="ag-aside__header">
+              <div className="eyebrow">Registered · {agents.length}</div>
+            </div>
+            {agents.length === 0 && <p className="kb-hint">No agents yet.</p>}
+            {agents.map(a => (
+              <div
+                key={a.id}
+                className={`ag-list-item${selectedId === a.id && !isNew ? ' ag-list-item--active' : ''}`}
+                onClick={() => handleSelect(a.id)}
+              >
+                {selectedId === a.id && !isNew && <div className="ag-list-item__accent" />}
+                <div className="ag-list-item__top">
+                  <AgentIcon size={13} />
+                  <span className="ag-list-item__name">@{a.id}</span>
+                  {a.is_builtin && (
+                    <span className="agents-list__lock" style={{ marginLeft: 'auto' }} title="Built-in">
+                      <LockIcon />
+                    </span>
+                  )}
+                </div>
+                <div className="ag-list-item__desc">{a.description}</div>
+                <div className="ag-list-item__meta mono">— RUNS</div>
+              </div>
+            ))}
+          </aside>
+
+          {/* ── Right: detail / edit form ── */}
+          <section className="ag-main">
+            {!form ? (
+              <AgentsEmpty onNew={handleNew} />
+            ) : (
+              <form className="ag-detail" onSubmit={handleSave}>
+
+                {/* Header row */}
+                <div className="ag-detail__header">
+                  <div className="ag-detail__avatar" style={{
+                    background: (form.color || '#6366f1') + '22',
+                    borderColor: (form.color || '#6366f1') + '55',
+                  }}>
+                    <AgentIcon size={20} />
+                  </div>
+                  <div className="ag-detail__name-block">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                      <h2 className="serif ag-detail__name">
+                        {isNew ? 'New Agent' : `@${form.name}`}
+                      </h2>
+                      {!isNew && <span className="tag ok dot">Active</span>}
+                      {form.is_builtin && <span className="agent-builtin-badge">built-in</span>}
+                    </div>
+                    {!isNew && (
+                      <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>
+                        {form.description || 'No description'}
+                      </div>
+                    )}
+                  </div>
+                  {!isNew && (
+                    <div style={{ display: 'flex', gap: 6, marginLeft: 'auto', flexShrink: 0 }}>
+                      {!form.is_builtin && (
+                        <button type="button" className="btn ghost icon"
+                          onClick={handleDelete} disabled={deleting} title="Delete agent">
+                          <TrashIcon />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {error && <p className="agent-form__error">{error}</p>}
+
+                {/* Stats strip */}
+                {!isNew && (
+                  <div className="ag-stats">
+                    <AgStat label="Total runs" value="—" />
+                    <AgStat label="Success rate" value="—" />
+                    <AgStat label="Avg duration" value="—" />
+                    <AgStat label="Avg tokens" value="—" />
+                  </div>
+                )}
+
+
+                {/* New-agent fields */}
+                {isNew && (
+                  <div className="ag-new-fields">
+                    <div className="agent-field">
+                      <label className="agent-field__label">ID <span className="agent-field__hint">(slug)</span></label>
+                      <input className="agent-field__input" value={form.id}
+                        onChange={e => setField('id', e.target.value.replace(/[^a-z0-9_-]/g, ''))}
+                        placeholder="my-agent" required pattern="[a-z0-9_\-]+" />
+                    </div>
+                    <div className="agent-field">
+                      <label className="agent-field__label">Name</label>
+                      <input className="agent-field__input" value={form.name}
+                        onChange={e => setField('name', e.target.value)} required />
+                    </div>
+                    <div className="agent-field">
+                      <label className="agent-field__label">Description</label>
+                      <input className="agent-field__input" value={form.description}
+                        onChange={e => setField('description', e.target.value)}
+                        placeholder="One-line purpose" />
+                    </div>
+                    <div className="agent-field">
+                      <label className="agent-field__label">Color</label>
+                      <div className="agent-swatches">
+                        {COLOR_SWATCHES.map(c => (
+                          <button key={c} type="button"
+                            className={`agent-swatch${form.color === c ? ' agent-swatch--active' : ''}`}
+                            style={{ background: c }} onClick={() => setField('color', c)} title={c} />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* System prompt + Tools side by side */}
+                <div className="ag-cards">
+                  <div className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column' }}>
+                    <div className="eyebrow" style={{ marginBottom: 14 }}>System Prompt</div>
+                    <textarea
+                      className="agent-prompt-textarea"
+                      value={form.system_prompt}
+                      onChange={e => setField('system_prompt', e.target.value)}
+                      disabled={form.is_builtin}
+                      placeholder="You are a helpful agent..."
+                      style={{ flex: 1, minHeight: 200 }}
+                    />
+                    {!isNew && (
+                      <div className="mono" style={{ fontSize: 10.5, color: 'var(--text-muted)', marginTop: 14, display: 'flex', gap: 14 }}>
+                        <span>MODEL · GEMMA4:E2B</span>
+                        <span>TEMP · 0.4</span>
+                        <span>MAX · 2,048</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="card" style={{ padding: 22 }}>
+                    <div className="eyebrow" style={{ marginBottom: 14 }}>
+                      Tools · {tools.filter(t => form.tools.includes(t.id)).length}
+                    </div>
+                    {tools.length === 0 && <p className="kb-hint">No tools registered.</p>}
+                    {tools.map((t, i) => {
+                      const checked = form.tools.includes(t.id)
+                      return (
+                        <label key={t.id} className={`agent-tool${checked ? ' agent-tool--checked' : ''}`} style={{
+                          display: 'flex', gap: 10, alignItems: 'flex-start',
+                          paddingTop: i > 0 ? 10 : 0,
+                          borderTop: i > 0 ? '1px solid var(--border)' : 'none',
+                          marginTop: i > 0 ? 10 : 0,
+                        }}>
+                          <input type="checkbox" style={{ marginTop: 2, flexShrink: 0 }}
+                            checked={checked}
+                            onChange={() => !form.is_builtin && toggleTool(t.id)}
+                            disabled={form.is_builtin} />
+                          <div>
+                            <div className={`agent-tool__name${checked ? ' agent-tool__name--checked' : ''}`}>{t.name}</div>
+                            <div className="agent-tool__desc">{t.description}</div>
+                          </div>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Save footer */}
+                {!form.is_builtin && (
+                  <div className="agent-form__footer">
+                    <button type="submit" className="agent-btn agent-btn--primary" disabled={saving}>
+                      {saving ? 'Saving…' : isNew ? 'Create Agent' : 'Save Changes'}
+                    </button>
+                    {!isNew && (
+                      <button type="button" className="agent-btn agent-btn--danger"
+                        onClick={handleDelete} disabled={deleting}>
+                        {deleting ? 'Deleting…' : 'Delete'}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </form>
+            )}
+          </section>
+        </div>
       </div>
     </div>
   )

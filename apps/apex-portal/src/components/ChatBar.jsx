@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { listAgents } from '../api/agents'
 import { listCollections } from '../api/rag'
+import { IndexSpinner } from './Spinners'
 
 const ACCEPTED = '.txt,.md,.pdf,.html,.htm,.csv'
 
@@ -32,9 +33,24 @@ function FolderIcon() {
   )
 }
 
-export default function ChatBar({ onSend, loading }) {
+export default function ChatBar({ onSend, loading, prefillText, onPrefillConsumed }) {
   const [text, setText] = useState('')
   const [files, setFiles] = useState([])
+
+  // Accept prefill from parent (prompt cards)
+  useEffect(() => {
+    if (prefillText) {
+      setText(prefillText)
+      onPrefillConsumed?.()
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto'
+          textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+          textareaRef.current.focus()
+        }
+      })
+    }
+  }, [prefillText]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // KB collection
   const [collection, setCollection] = useState(null)
@@ -305,10 +321,11 @@ export default function ChatBar({ onSend, loading }) {
           className="chat-bar__send"
           onClick={submit}
           disabled={!canSend}
-          title="Send"
+          style={loading ? { opacity: 1, cursor: 'default' } : undefined}
+          title={loading ? 'Generating…' : 'Send'}
           aria-label="Send"
         >
-          <SendIcon />
+          {loading ? <IndexSpinner size={18} /> : <SendIcon />}
         </button>
       </div>
     </div>

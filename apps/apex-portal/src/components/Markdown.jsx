@@ -103,7 +103,34 @@ function mdToHtml(raw) {
   return s
 }
 
+import { useEffect, useRef } from 'react'
+
+const COPY_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`
+const CHECK_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+
 export default function Markdown({ children }) {
+  const ref = useRef(null)
   const html = mdToHtml(typeof children === 'string' ? children : String(children ?? ''))
-  return <div className="md" dangerouslySetInnerHTML={{ __html: html }} />
+
+  useEffect(() => {
+    if (!ref.current) return
+    ref.current.querySelectorAll('pre').forEach(pre => {
+      if (pre.querySelector('.md-copy')) return
+      const btn = document.createElement('button')
+      btn.className = 'md-copy'
+      btn.title = 'Copy'
+      btn.innerHTML = COPY_SVG
+      btn.addEventListener('click', () => {
+        const text = pre.querySelector('code')?.innerText || pre.innerText
+        navigator.clipboard.writeText(text).then(() => {
+          btn.innerHTML = CHECK_SVG
+          btn.classList.add('md-copy--ok')
+          setTimeout(() => { btn.innerHTML = COPY_SVG; btn.classList.remove('md-copy--ok') }, 1600)
+        }).catch(() => {})
+      })
+      pre.appendChild(btn)
+    })
+  }, [html])
+
+  return <div className="md" ref={ref} dangerouslySetInnerHTML={{ __html: html }} />
 }

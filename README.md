@@ -9,16 +9,10 @@ Five independently deployable microservices, unified in one monorepo, runnable l
 
 ---
 
-## Demo
-
-<video src="https://github.com/user-attachments/assets/aa695321-606d-4f51-9a2f-5fc8b6714a47" controls width="100%"></video>
-
----
-
 ## Table of Contents
 
-- [Demo](#demo)
-- [Screenshots](#screenshots)
+- [UI](#ui)
+- [UI Flow](#ui-flow)
 - [Architecture](#architecture)
 - [Services](#services)
 - [Prerequisites](#prerequisites)
@@ -36,18 +30,63 @@ Five independently deployable microservices, unified in one monorepo, runnable l
 
 ---
 
-## Screenshots
+## UI
 
-| | |
-|---|---|
-| ![Login](docs/screenshots/login.png) | ![Chat — empty state](docs/screenshots/chat-empty.png) |
-| **Login** | **Chat — empty state** |
-| ![Chat — LLM response](docs/screenshots/chat-response.png) | ![Agent @mention](docs/screenshots/agent-mention.png) |
-| **Chat — LLM response** | **Agent @mention streaming** |
-| ![Knowledge Base](docs/screenshots/knowledge-base.png) | ![RAG response with sources](docs/screenshots/rag-response.png) |
-| **Knowledge Base — folder view** | **RAG response with cited sources** |
-| ![Agents config](docs/screenshots/agents-config.png) | ![Light mode](docs/screenshots/light-mode.png) |
-| **Agents — config panel** | **Light mode** |
+The portal uses an **editorial dark** design system — serif headlines, mono eyebrows, warm amber accent, 1px border dividers. Five pages:
+
+| Route | Page | Description |
+|-------|------|-------------|
+| `/` | **Chat** | RAG-grounded chat with `@agent` mention picker and streaming SSE |
+| `/kb` | **Knowledge Base** | Upload files into named collections; hybrid BM25 + semantic search; LOW effort ingestion |
+| `/agents` | **Agents** | LangGraph agent registry — list + detail (stats strip, graph diagram, system prompt, tools) |
+| `/tools` | **Tools** | Custom Python tool editor with live test playground; built-in tool reference |
+| `/settings` | **Settings** | Live service health, model config, appearance |
+
+Design tokens and component rules are documented in [docs/DESIGN.md](docs/DESIGN.md).
+
+---
+
+## UI Flow
+
+The screenshots below show the default user journey through the portal.
+
+### 1) Login
+
+Route: `/login`
+
+![Login screen](docs/screenshots/01-login.png)
+
+### 2) Chat Workspace
+
+Route: `/`
+
+![Chat workspace](docs/screenshots/02-chat.png)
+
+### 3) Knowledge Base (Updated)
+
+Route: `/kb`
+
+![Knowledge base updated](docs/screenshots/09-kb-updated.png)
+
+### 4) Agents (Updated)
+
+Route: `/agents`
+
+![Agents updated](docs/screenshots/07-agents-updated.png)
+
+### 5) Tools (Updated)
+
+Route: `/tools`
+
+![Tools updated](docs/screenshots/10-tools-new.png)
+
+### 6) Settings
+
+Route: `/settings`
+
+![Settings](docs/screenshots/06-settings.png)
+
+Legacy captures are still available in [docs/screenshots](docs/screenshots/) for historical comparison.
 
 ---
 
@@ -64,7 +103,7 @@ User
                  └── services/apex-gateway  (internal LLM calls)
 ```
 
-- **apex-rag** is retrieval-only — it never calls an LLM directly.
+- **apex-rag** supports two ingestion modes selectable per upload: **low effort** (fast: chunk → embed → store) and **high effort** (LLM generates semantic tags per chunk before embedding — richer vectors, better retrieval for dense documents).
 - **apex-gateway** assembles the RAG prompt from `{context, question}` and streams tokens.
 - **apex-agents** detects `@mention` triggers, runs LangGraph graphs, and emits SSE events.
 - All Python services use **FastAPI + uvicorn**; state is persisted in SQLite (identity, agents) and ChromaDB (vectors).
@@ -77,11 +116,11 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full deep-dive, and [do
 
 | Service | Language | Port | Responsibility |
 |---------|----------|------|----------------|
-| [`services/apex-rag`](services/apex-rag/) | Python 3.11+ | 8000 | Ingestion, chunking, embedding, BM25 + semantic hybrid search, reranking |
+| [`services/apex-rag`](services/apex-rag/) | Python 3.11+ | 8000 | Ingestion (low/high effort), chunking, LLM semantic tagging, embedding, BM25 + semantic hybrid search, reranking |
 | [`services/apex-identity`](services/apex-identity/) | Python 3.11+ | 8001 | JWT auth, user management, sessions, message persistence (SQLite + Alembic) |
 | [`services/apex-gateway`](services/apex-gateway/) | Python 3.11+ | 8002 | Thin Ollama LLM wrapper — streaming + non-streaming generation |
 | [`services/apex-agents`](services/apex-agents/) | Python 3.11+ | 8003 | Agent registry, LangGraph execution engine, SSE token streaming |
-| [`apps/apex-portal`](apps/apex-portal/) | React 18 + Vite | 5173 | Full-stack chat UI — auth, sessions, knowledge base, @mention agents |
+| [`apps/apex-portal`](apps/apex-portal/) | React 18 + Vite | 5173 | Full-stack chat UI — auth, sessions, knowledge base, agents, custom tools |
 
 ---
 

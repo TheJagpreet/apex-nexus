@@ -24,70 +24,102 @@ function WrenchIcon() {
   )
 }
 
+function SparkleIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2L9 9 2 12l7 3 3 7 3-7 7-3-7-3z" />
+    </svg>
+  )
+}
+
 export default function MessageBubble({ message }) {
   const { role, content, files, sources, agent, collection, tools_called } = message
   const [showSources, setShowSources] = useState(false)
   const displayContent = role === 'assistant' ? stripToolCalls(content) : content
 
-  const agentColor = agent?.color
-  const hasContext = agent || collection
-
-  return (
-    <div className={`message message--${role}`}>
-      <div className="message__stack">
-        {/* Agent / collection label — dot + name above the bubble */}
-        {hasContext && (
-          <div className="message__context-label">
-            {agent && (
-              <span className="message__context-label__item" style={{ color: agentColor }}>
-                <span className="message__context-dot" style={{ background: agentColor }} />
-                {agent.name}
-              </span>
-            )}
-            {collection && (
-              <span className="message__context-label__item message__context-label__item--collection">
-                <FolderIcon />
-                {collection}
-              </span>
-            )}
+  if (role === 'user') {
+    return (
+      <div className="message message--user fade-in">
+        <div className="message__avatar">
+          {message.userInitial || 'J'}
+        </div>
+        <div className="message__stack">
+          <div className="message__header">
+            <span className="message__name">You</span>
+            <span className="message__time mono">{formatTime()}</span>
           </div>
-        )}
+          <div className="message__body">
+            {files && files.length > 0 && (
+              <div className="message__files">
+                {files.map(name => (
+                  <span key={name} className="message__file-tag">[{name}]</span>
+                ))}
+              </div>
+            )}
+            {displayContent}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
-        {/* Bubble — outlined in agent color when an agent/collection is active */}
-        <div
-          className="message__bubble"
-          style={agentColor ? { '--agent-color': agentColor, borderColor: agentColor } : undefined}
-        >
-          {/* File tags — shown inside user messages when files were attached */}
-          {role === 'user' && files && files.length > 0 && (
-            <div className="message__files">
-              {files.map(name => (
-                <span key={name} className="message__file-tag">
-                  [{name}]
-                </span>
-              ))}
-            </div>
+  if (role === 'system' || role === 'error') {
+    return (
+      <div className={`message message--${role}`}>
+        <div className="message__stack">
+          <div className="message__bubble">{displayContent}</div>
+        </div>
+      </div>
+    )
+  }
+
+  // assistant
+  return (
+    <div className="message message--assistant fade-in">
+      {/* Sparkle avatar — no color */}
+      <div className="message__avatar message__avatar--apex">
+        <SparkleIcon />
+      </div>
+      <div className="message__stack">
+        {/* Header: Apex · tag · time */}
+        <div className="message__header">
+          <span className="message__name">Apex</span>
+          {agent && (
+            <span className="tag dot" style={{ color: 'var(--accent)', borderColor: 'var(--accent-line)' }}>
+              {agent.name}
+            </span>
           )}
+          {collection && !agent && (
+            <span className="tag">
+              <FolderIcon /> {collection}
+            </span>
+          )}
+          {!agent && !collection && (
+            <span className="tag dot" style={{ color: 'var(--accent)', borderColor: 'var(--accent-line)' }}>
+              RAG
+            </span>
+          )}
+          <span className="message__time mono" style={{ marginLeft: 'auto' }}>
+            {/* timing shown in sources line if available */}
+          </span>
+        </div>
 
-          {/* Message text — markdown-rendered for assistant, plain for user */}
-          {role === 'assistant'
-            ? <Markdown>{displayContent}</Markdown>
-            : displayContent}
+        {/* Body */}
+        <div className="message__body">
+          <Markdown>{displayContent}</Markdown>
 
-          {/* Tools called — small chips below assistant message */}
-          {role === 'assistant' && tools_called && tools_called.length > 0 && (
+          {tools_called && tools_called.length > 0 && (
             <div className="message__tool-chips">
               {[...new Set(tools_called)].map(tool => (
                 <span key={tool} className="message__tool-chip">
-                  <WrenchIcon />
-                  {tool}
+                  <WrenchIcon /> {tool}
                 </span>
               ))}
             </div>
           )}
 
-          {/* Sources disclosure — assistant messages only */}
-          {role === 'assistant' && sources && sources.length > 0 && (
+          {sources && sources.length > 0 && (
             <div className="message__sources">
               <button
                 className="message__sources-toggle"
@@ -110,8 +142,14 @@ export default function MessageBubble({ message }) {
               )}
             </div>
           )}
-        </div>{/* end message__bubble */}
-      </div>{/* end message__stack */}
+        </div>
+      </div>
     </div>
   )
 }
+
+function formatTime() {
+  const d = new Date()
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+

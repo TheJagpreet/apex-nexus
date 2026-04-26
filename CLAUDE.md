@@ -1,6 +1,6 @@
-# CLAUDE.md — Apex Nexus
+# CLAUDE.md
 
-This file provides guidance to Claude Code when working in this monorepo.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Project Overview
 
@@ -15,6 +15,16 @@ Multi-service RAG platform — five independently deployable services in one rep
 | `apps/apex-portal` | React 18 + Vite | 5173 | Full-stack chat UI |
 | `packages/apex-logging` | Python 3.11+ | — | Shared structured logging + OpenTelemetry (installed as path dep) |
 
+## Prerequisites
+
+- `uv >= 0.4` (Python package manager — used by all services instead of pip)
+- `node 20+` and `npm`
+- `ollama` running locally with these models pulled:
+  ```bash
+  ollama pull gemma4:e2b        # LLM (apex-gateway + apex-agents)
+  ollama pull nomic-embed-text  # embeddings (apex-rag)
+  ```
+
 ## Commands
 
 ### Install all deps
@@ -24,8 +34,10 @@ make setup
 
 ### Start all services
 ```bash
-make dev
+make dev   # requires Unix shell (bash / Git Bash / WSL)
 ```
+
+**Windows PowerShell:** use `.\scripts\dev.ps1` instead.
 
 ### Run all tests
 ```bash
@@ -36,7 +48,15 @@ make test
 ```bash
 make dev-rag / dev-identity / dev-gateway / dev-agents / dev-portal
 make test-rag / test-identity / test-gateway / test-agents
-make lint          # ruff + mypy on apex-identity, apex-gateway, apex-agents
+make lint              # ruff + mypy on apex-identity, apex-gateway, apex-agents
+make lint-<service>   # e.g. make lint-agents
+```
+
+### Run a single test file or case
+```bash
+# From service directory (venv must be active):
+pytest tests/test_pipeline.py
+pytest tests/test_auth.py::test_login
 ```
 
 ### Manual per-service (from service directory)
@@ -57,6 +77,8 @@ cd services/apex-agents && .venv/bin/python server.py
 cd apps/apex-portal && npm run dev
 ```
 
+> **Windows note:** venv bin path is `.venv/Scripts/` on Windows native, `.venv/bin/` on Git Bash/WSL.
+
 ## Architecture
 
 ```
@@ -70,7 +92,7 @@ apps/apex-portal
 
 - **apex-rag** never calls an LLM — it is retrieval-only.
 - **apex-gateway** assembles the RAG prompt from `{context, question}`.
-- **apex-agents** uses LangGraph + ChatOllama; detects `<tool_call>` in streamed output.
+- **apex-agents** uses LangGraph + ChatOllama; detects `<tool_call>` XML tags in the streamed model output to dispatch built-in and custom tools. Custom tools (user-defined Python functions stored in SQLite) run in a sandboxed thread pool.
 - All Python services use FastAPI + uvicorn + SQLAlchemy (where applicable).
 - Portal uses Vite env vars (`VITE_*`) — all API calls go through `apps/apex-portal/src/api/`.
 

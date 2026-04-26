@@ -7,6 +7,7 @@ import { DNASpinner } from './Spinners'
 const STAGE_LABELS = {
   loading:   'Uploading file…',
   chunking:  'Chunking document…',
+  tagging:   'Generating semantic tags…',
   embedding: 'Embedding chunks…',
   storing:   'Storing vectors…',
   done:      'Complete!',

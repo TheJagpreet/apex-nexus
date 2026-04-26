@@ -1,200 +1,291 @@
-# Design System — Bioluminescent Deep-Sea Aesthetic
+# Design System — Apex Nexus Editorial Dark
 
-## 1. Visual Theme & Atmosphere
+> Reference implementation: `nexus/styles.css` · Applied in: `apps/apex-portal/src/index.css`
 
-The Apex portal embodies a bioluminescent deep-sea aesthetic — dark oceanic backgrounds with glowing cyan, amber, and magenta accents inspired by deep-ocean organisms. The visual system creates an immersive feeling of exploring a living neural network beneath the surface.
+## 1. Visual Theme
 
-The background palette is built on near-black oceanic tones (`#080c10` primary) with raised surfaces in progressively lighter blue-blacks (`#0e1319`, `#151c24`). This isn't a generic dark theme — it's specifically calibrated to evoke deep water, with cool blue undertones throughout.
+Apex Nexus uses an **editorial dark** aesthetic — dense, typographic, and information-rich. Inspired by technical publications and professional dashboards. No glow effects, no neon. Precision and legibility above all.
 
-IBM Plex Mono is the primary typeface, maintaining the monospace identity from earlier iterations while providing excellent readability on dark backgrounds. The monospace grid naturally enforces alignment and rhythm across the layout.
+**Key characteristics:**
+- Serif headlines (Newsreader) paired with mono eyebrows and sans body copy
+- Near-black background stack with subtle warm undertones
+- Warm amber accent (`oklch(0.78 0.08 70)`) — editorial, not glowing
+- 1px border lines as the primary structural element
+- Compact spacing; information-dense layouts
 
-The color system centers on bioluminescent cyan (`oklch(0.82 0.16 178)`) as the primary accent, complemented by warm amber (`oklch(0.78 0.14 70)`) and rare magenta (`oklch(0.72 0.18 340)`). These colors appear with subtle glow effects (`text-shadow`, `box-shadow`) that reinforce the bioluminescent feel.
+---
 
-**Key Characteristics:**
-- IBM Plex Mono as the sole typeface — monospace everywhere
-- Deep oceanic dark primary (`#080c10`) with cool blue undertone
-- Bioluminescent text (`#e8f4f0`) with subtle cyan warmth
-- Bioluminescent cyan accent (`oklch(0.82 0.16 178)`) with glow effects
-- Minimal 4px border radius throughout
-- 8px base spacing system
-- Biology-inspired spinners and animations (Synapse, Membrane, DNA, Mitosis, etc.)
-- Subtle glow borders using `rgba(0, 255, 200, 0.08)` - `rgba(0, 255, 200, 0.18)`
-- CSS custom properties (`--glow-cyan`, `--glow-amber`, `--glow-magenta`) for glow utilities
+## 2. Color Tokens
 
-## 2. Color Palette & Roles
+All tokens are defined in `:root` in `apps/apex-portal/src/index.css`.
 
-### Bioluminescent Palette (oklch)
-- **Bio Cyan** (`oklch(0.82 0.16 178)`): Primary accent, interactive highlights, logo glow
-- **Bio Cyan Dim** (`oklch(0.55 0.12 178)`): Muted accent, secondary indicators
-- **Bio Amber** (`oklch(0.78 0.14 70)`): Warm accent, warnings, secondary highlights
-- **Bio Magenta** (`oklch(0.72 0.18 340)`): Rare third accent, special indicators
-- **Bio Foreground** (`oklch(0.95 0.01 90)`): Near-white for highest contrast text
-
-### Primary Surfaces
-- **Deep Ocean** (`#080c10`): Primary background — near-black with cool blue
-- **Mid Ocean** (`#0e1319`): Surface backgrounds, sidebar, inputs
-- **Shallow Ocean** (`#151c24`): Raised surfaces, code blocks, hover states
+### Surfaces (dark → light)
+| Token | Value | Role |
+|-------|-------|------|
+| `--bg` | `#0a0a0b` | Page background |
+| `--bg-surface` | `#0e0e10` | Sidebar, cards |
+| `--bg-raised` | `#131316` | Inputs, dropdowns |
+| `--bg-3` | `#18181c` | Hover overlays |
 
 ### Text
-- **Primary Text** (`#e8f4f0`): Main body text — warm bioluminescent white
-- **Secondary Text** (`#7eaba0`): Labels, descriptions — muted cyan-green
-- **Muted Text** (`#4a7a70`): Placeholders, disabled — deeper muted
+| Token | Value | Role |
+|-------|-------|------|
+| `--text` | `#e8e6e0` | Primary body copy |
+| `--text-secondary` | `#a8a59c` | Labels, descriptions |
+| `--text-muted` | `#6e6c64` | Placeholders, eyebrows |
+| `--text-faint` | `#45433d` | Disabled, separators |
 
 ### Borders
-- **Border Subtle** (`rgba(0, 255, 200, 0.08)`): Default borders — barely visible glow
-- **Border Strong** (`rgba(0, 255, 200, 0.18)`): Interactive borders — noticeable glow
+| Token | Value | Role |
+|-------|-------|------|
+| `--border` | `#1f1f23` | Default dividers |
+| `--border-strong` | `#2a2a30` | Active/hover borders |
+
+### Accent
+| Token | Value | Role |
+|-------|-------|------|
+| `--accent` | `oklch(0.78 0.08 70)` | Warm amber — primary interactive |
+| `--accent-dim` | `oklch(0.78 0.08 70 / 0.18)` | Accent backgrounds |
+| `--accent-line` | `oklch(0.78 0.08 70 / 0.4)` | Accent borders |
 
 ### Semantic
-- **Accent** (`oklch(0.82 0.16 178)` / cyan): Primary interactive color
-- **Danger** (`#ff4060`): Error states, destructive actions — warm red
-- **Success** (`#30ffb0`): Success states — bright bio-green
-- **Warning** (`oklch(0.78 0.14 70)` / amber): Warning states
+| Token | Value | Role |
+|-------|-------|------|
+| `--ok` / `--success` | `oklch(0.78 0.06 150)` | Indexed, healthy, active |
+| `--warn` / `--warning` | `oklch(0.80 0.10 50)` | Draft, stale |
+| `--danger` / `--error` | `oklch(0.70 0.12 25)` | Error, destructive |
 
-### Glow Utilities (CSS Custom Properties)
-- **`--glow-cyan`**: `0 0 20px rgba(0, 255, 200, 0.15), 0 0 60px rgba(0, 255, 200, 0.05)` — large glow
-- **`--glow-cyan-sm`**: `0 0 8px rgba(0, 255, 200, 0.12)` — subtle glow for buttons/inputs
-- **`--glow-amber`**: `0 0 20px rgba(255, 200, 60, 0.12)` — amber element glow
-- **`--glow-magenta`**: `0 0 20px rgba(255, 80, 200, 0.12)` — magenta accent glow
+---
 
-## 3. Typography Rules
+## 3. Typography
 
-### Font Family
-- **Universal**: `IBM Plex Mono`, with fallbacks: `Berkeley Mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace`
+### Typefaces
+| Role | Font | Token |
+|------|------|-------|
+| Display / headings | Newsreader (serif) | `--font-serif` |
+| Body / UI | Inter (sans) | `--font` |
+| Code / mono labels | JetBrains Mono | `--font-mono` |
 
-### Hierarchy
+### Scale
 
-| Role | Size | Weight | Line Height | Notes |
-|------|------|--------|-------------|-------|
-| Heading 1 | 38px (2.38rem) | 700 | 1.50 | Hero headlines, page titles |
-| Heading 2 | 16px (1.00rem) | 700 | 1.50 | Section titles, bold emphasis |
-| Body | 16px (1.00rem) | 400 | 1.50 | Standard body text, paragraphs |
-| Body Medium | 16px (1.00rem) | 500 | 1.50 | Links, button text, nav items |
-| Body Tight | 16px (1.00rem) | 500 | 1.00 (tight) | Compact labels, tab items |
-| Caption | 14px (0.88rem) | 400 | 2.00 (relaxed) | Footnotes, metadata, small labels |
+**Page title (`.page-head h1`)**
+```css
+font-family: var(--font-serif);
+font-size: 44px;
+font-weight: 400;
+letter-spacing: -0.02em;
+line-height: 1.05;
+```
 
-### Principles
-- **One font, one voice**: IBM Plex Mono exclusively. Hierarchy through size and weight alone.
-- **Weight as hierarchy**: 700 for headings, 500 for interactive/medium emphasis, 400 for body text.
-- **Generous line-height**: 1.50 standard, 2.00 for captions.
+**Eyebrow (`.eyebrow`)**
+```css
+font-family: var(--font-mono);
+font-size: 10.5px;
+letter-spacing: 0.18em;
+text-transform: uppercase;
+color: var(--text-muted);
+```
 
-## 4. Biology-Inspired Spinners
+**Body**
+```css
+font-size: 14px;
+line-height: 1.55;
+letter-spacing: -0.005em;
+```
 
-All spinners are pure CSS + SVG, using the bioluminescent accent palette. Located in `src/components/Spinners.jsx`.
+**Lede (`.page-head .lede`)**
+```css
+font-size: 15px;
+color: var(--text-secondary);
+max-width: 560px;
+line-height: 1.55;
+```
 
-| Spinner | Purpose | Visual |
-|---------|---------|--------|
-| **MitosisSpinner** | Agent spawning | Two cells dividing and merging |
-| **SynapseSpinner** | Service health check | Neural nodes with firing pulses |
-| **MembraneSpinner** | Idle/empty states | Concentric rings breathing |
-| **DNASpinner** | RAG file ingestion | Double helix dots unwinding |
-| **EnzymeSpinner** | Tool execution | Rotating catalytic complex |
-| **NeuralNetSpinner** | LLM inference | Pulsing network graph |
-| **BiolumPulseSpinner** | General loading | Radial glow pulse |
-| **RibosomeSpinner** | Chunking/embedding | Particles along a track |
-| **OrganelleSpinner** | Multi-service coordination | Orbiting particles |
-| **PhageSpinner** | Code injection/tools | Virus-like injector |
-| **FlagellumSpinner** | Linear indicator | Whip-like tail motion |
-| **PhotonScatterSpinner** | General scatter | Particles emitting from center |
+---
 
-## 5. Component Stylings
+## 4. Layout
 
-### Buttons
+### App shell
+```
+┌──────────────────────────────────────────────┐
+│  Sidebar (248px)  │  Main content (flex: 1)  │
+│                   │  ┌── Topbar ────────────┐│
+│  Brand mark       │  │ Crumbs  /  Actions   ││
+│  Nav items        │  └──────────────────────┘│
+│  Session list     │  ┌── Page head ─────────┐│
+│  User strip       │  │ Eyebrow / H1 / Lede  ││
+└───────────────────┘  └──────────────────────┘│
+                        Page body content        │
+                       └────────────────────────┘
+```
 
-**Primary (Accent Fill)**
-- Background: `var(--accent)` (bioluminescent cyan)
-- Text: `#080c10` (deep ocean)
-- Padding: 10px 20px
-- Radius: 4px
-- Box-shadow: `var(--glow-cyan-sm)`
-- Font: 16px IBM Plex Mono, weight 500
+### Page structure
+Every content page uses this pattern:
 
-### Inputs
-- Background: `var(--bg-input)` (`#0e1319`)
-- Text: `var(--text)` (`#e8f4f0`)
-- Border: `1px solid var(--border-strong)`
-- Padding: 10px 14px
-- Radius: 6px
-- Focus: `border-color: var(--accent)`
+```jsx
+<div className="[page]-page-v2">       {/* flex col, height 100%, overflow hidden */}
+  <BgPattern name="..." />
+  <div className="topbar">...</div>    {/* breadcrumbs + actions */}
+  <div className="[page]-scroll">      {/* flex: 1, overflow-y auto */}
+    <div className="page-head">        {/* eyebrow + h1 + lede */}
+    <div className="[page]-body">      {/* 2-col grid or single col content */}
+  </div>
+</div>
+```
 
-### Links
-- Color: `var(--accent)` (bioluminescent cyan)
-- Decoration: underline 1px
-- Text-shadow: `0 0 8px rgba(0, 255, 200, 0.15)`
+### Two-column body (Agents / Tools / KB)
+```css
+/* Agents / Tools */
+.ag-body {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 28px;
+  padding: 0 64px 60px;
+}
 
-### Logo Text
-- Color: `var(--accent)`
-- Text-shadow: `0 0 20px rgba(0, 255, 200, 0.3), 0 0 40px rgba(0, 255, 200, 0.1)`
+/* Knowledge Base */
+.kb-body {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 40px;
+}
+```
 
-## 6. Special UI Components
+---
 
-### Service Health Check
-Shown on first visit before login/signup. Centered synapse spinner with service status rows (green/red dots). Rows fade out when all green, spinner centers with ease-in animation, then redirects.
+## 5. Components
 
-### Scrambled Text Effect
-During LLM streaming, incoming characters show as random Unicode symbols/glyphs before settling to their final value. Creates the visual of meaning emerging from randomness.
+### Topbar (`.topbar`)
+- `background: rgba(10,10,11,0.6)` with `backdrop-filter: blur(8px)`
+- Breadcrumbs: mono, 11px, uppercase, `letter-spacing: 0.08em`
+  - Separators: `.sep` → `color: var(--text-faint)`
+  - Current page: `.here` → `color: var(--text)`
+- Actions right-aligned via `margin-left: auto`
 
-### Active Run Steps
-Pipeline visualization shown before output streams in. Steps like "Querying knowledge base", "Building LLM context", "Executing tools" appear with status indicators (pending/active/done). Fades out when actual content begins streaming.
+### Buttons (`.btn`)
+| Variant | Usage |
+|---------|-------|
+| default | Secondary — bordered, `--bg-raised` bg |
+| `.ghost` | Tertiary — transparent border, `--text-secondary` |
+| `.primary` | Primary CTA — `--text` bg, `--bg` text |
+| `.accent-btn` | Amber CTA — accent-dim bg, accent text |
+| `.icon` | 32×32 square icon button |
 
-### Ingest Overlay
-Centered modal overlay with DNA transcription spinner shown during RAG file upload. Displays current stage (uploading, chunking, embedding, storing) with filename.
+### Tags (`.tag`)
+```
+.tag          base: mono 10px, uppercase, 3px radius
+.tag.ok       green — Active, Indexed, Healthy
+.tag.warn     amber — Draft, Stale
+.tag.accent   amber accent — Indexing (pulsing)
+.tag.dot      adds colored dot ::before pseudo
+```
 
-### DesignCanvas
-Figma-like infinite canvas with pan/zoom (trackpad pinch, mouse wheel, drag). Includes DCSection, DCArtboard, and DCPostIt sub-components.
+### Cards (`.card`)
+```css
+background: var(--bg-surface);
+border: 1px solid var(--border);
+border-radius: var(--radius-lg);  /* 10px */
+padding: 24px;
+```
 
-## 7. Layout Principles
+### Stats strip
+4-col grid with 1px gap acting as dividers:
+```css
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+gap: 1px;
+background: var(--border);
+border: 1px solid var(--border);
+border-radius: 10px;
+overflow: hidden;
+/* each cell: background: var(--bg-surface); padding: 18-20px */
+```
 
-### Spacing System
-- Base unit: 8px
-- Fine scale: 1px, 2px, 4px
-- Standard scale: 8px, 12px, 16px, 20px, 24px
-- Extended scale: 32px, 40px, 48px, 64px, 80px, 96px
+### Nav items (`.nav-item.active`)
+Active left-border accent rule:
+```css
+.nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: -14px; top: 8px; bottom: 8px;
+  width: 2px;
+  background: var(--accent);
+}
+```
 
-### Border Radius Scale
-- Micro (4px): Default for all elements
-- Input (6px): Form inputs
-- Overlay (8px): Modal cards, toasts
+---
 
-## 8. Depth & Elevation
+## 6. Page Designs
 
-| Level | Treatment | Use |
-|-------|-----------|-----|
-| Flat (Level 0) | No shadow, no border | Default state |
-| Border Subtle (Level 1) | `rgba(0, 255, 200, 0.08)` | Section dividers, input borders |
-| Border Strong (Level 2) | `rgba(0, 255, 200, 0.18)` | Interactive borders, active elements |
-| Glow Small (Level 3) | `var(--glow-cyan-sm)` | Buttons, active inputs |
-| Glow Large (Level 4) | `var(--glow-cyan)` | Modals, hero elements |
+### Chat (`/`)
+- Topbar: `WORKSPACE / CHAT / session-title` + History + New session
+- Empty state: serif 52px heading, subtitle, 4 prompt cards (2×2 grid, max-width 720px)
+- Messages: max-width 860px, centered, gap 16px
+- Chat bar: sticky bottom, blurred backdrop, meta row below
 
-**Shadow Philosophy**: Depth is communicated through glow effects rather than traditional box-shadows. The bioluminescent theme uses radial glows that reinforce the undersea aesthetic.
+### Knowledge Base (`/kb`)
+- Topbar: breadcrumbs only — **no Upload/Reindex buttons** (intentionally removed)
+- Stats strip: Documents · Chunks · Embedding dim · P50 retrieval
+- Left aside (240px): Collections list + Index health card
+- Right: collection header (name + doc count + Mode toggle + search + grid/list buttons)
+- Drop zone above document grid
+- Document cards show: type badge, filename, chunk count, effort tag (LOW only), status badge
+- **High-effort ingestion is disabled** — button shown dimmed/disabled, LOW is the only active mode
 
-## 9. Theme Modes
+### Agents (`/agents`)
+- Topbar: crumbs + Run history (ghost) + New agent (primary)
+- Page head: "LangGraph Agent Runtime" / "Workflows that reason."
+- Left aside (300px): agent list with accent left-border on active row
+- Right: agent detail — avatar header, 4-stat strip (runs/success/duration/tokens), graph SVG, system prompt + tools cards side-by-side
+- **Auto-selects first agent on load**
 
-The system supports both dark (default, bioluminescent) and light modes via `[data-theme]`:
+### Tools (`/tools`)
+- Topbar: crumbs + New tool (primary)
+- Page head: "Custom Tool Runtime" / "Extend agent capabilities."
+- Left aside: built-in section (dimmed, lock icon) above custom section
+- Right main:
+  - Built-in: read-only "About this tool" card
+  - Custom: edit form — code editor (`tool-code-editor`) + playground side-by-side
+- Playground: JSON input textarea + "Run Test" (`.btn.accent-btn`) + result panel (green/red)
+- **Auto-selects first tool on load**
 
-**Dark (default)**: Deep oceanic backgrounds with glowing accents
-**Light**: Soft sage/seafoam backgrounds with muted accents — still ocean-inspired but for bright environments
+### Settings (`/settings`)
+- Three nav sections: Services · Models & Embeddings · Appearance
+- Services: live health-check list (green dot = HEALTHY, fetches `/health`)
+- Setting rows: 2-col grid (260px label + hint / control)
+- Toggle: 38×22px pill, accent color when on
 
-## 10. Agent Prompt Guide
+---
 
-### Quick Color Reference
-- Page background: `#080c10` (deep ocean)
-- Primary text: `#e8f4f0` (bioluminescent white)
-- Secondary text: `#7eaba0` (muted cyan)
-- Muted text: `#4a7a70`
-- Accent: `oklch(0.82 0.16 178)` (bio cyan)
-- Danger: `#ff4060`
-- Success: `#30ffb0`
-- Warning: `oklch(0.78 0.14 70)` (bio amber)
-- Button bg: `var(--accent)`, button text: `#080c10`
-- Border: `rgba(0, 255, 200, 0.08)` (subtle glow)
-- Input bg: `#0e1319`, input border: `rgba(0, 255, 200, 0.18)`
+## 7. Background Patterns
 
-### Iteration Guide
-1. IBM Plex Mono is the only font. Size and weight create all hierarchy.
-2. Use glow effects instead of traditional shadows. `--glow-cyan-sm` for subtle, `--glow-cyan` for prominent.
-3. The cool blue undertone matters: use `#080c10` not `#000000`, use `#e8f4f0` not `#ffffff`.
-4. Border radius is 4px everywhere except inputs (6px) and overlays (8px).
-5. Semantic colors: cyan accent, `#ff4060` red, `#30ffb0` green, amber orange.
-6. Borders use `rgba(0, 255, 200, 0.08)` — a barely-visible cyan glow.
-7. Spacing follows an 8px grid.
-8. Use biology-inspired spinners from `Spinners.jsx` for all loading states.
+`<BgPattern name="..." />` renders SVG into `position: absolute; inset: 0` with:
+- `opacity: 0.55`
+- radial gradient mask (ellipse 80% 70% at 50% 30%)
+
+Pattern names: `chat`, `rag`, `agents`
+
+---
+
+## 8. Animations
+
+| Class/Element | Duration | Use |
+|---------------|----------|-----|
+| `.fade-in` | 240ms ease-out | Element entrance |
+| `.pulse-dot` | 1.4s infinite | Live indexing status |
+| `.shimmer` | 1.6s infinite | Loading skeletons |
+| `.thinking-label` | 1.6s shimmer | "Generating…" |
+
+---
+
+## 9. Rules
+
+| Do | Don't |
+|----|-------|
+| Use `.page-head h1` (serif 44px) for page titles | Use bold sans for page titles |
+| Use `.eyebrow` for section labels above headings | Invent new label patterns |
+| Use `1px solid var(--border)` for all dividers | Use thick or colored borders |
+| Use `--text-secondary` / `--text-muted` tokens | Hardcode gray hex values |
+| Keep topbar to ≤ 2 action buttons | Overload the topbar |
+| Disable not-yet-ready features (dimmed btn) | Silently hide future features |
+| Auto-select first item in list+detail pages | Start with empty right panel |

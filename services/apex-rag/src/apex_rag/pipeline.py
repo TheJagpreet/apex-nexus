@@ -135,8 +135,16 @@ class RAGPipeline:
     # Ingestion
     # ------------------------------------------------------------------
 
-    def ingest_document(self, document: Document) -> int:
-        """Chunk, embed, and store a Document. Returns chunks added (0 if deduped)."""
+    def ingest_document(self, document: Document, effort: str = "low") -> int:
+        """Chunk, embed, and store a Document. Returns chunks added (0 if deduped).
+
+        Args:
+            document: Document to ingest.
+            effort:   ``"low"``  — fast path: chunk → embed → store.
+                      ``"high"`` — rich path: chunk → LLM tag → embed enriched text → store.
+                      High effort produces better retrieval by embedding semantic tags alongside
+                      the raw chunk text, expanding the concept space of each vector.
+        """
         # Deduplication check
         if self._dedup is not None:
             if self._dedup.is_seen(document.content):
@@ -149,25 +157,50 @@ class RAGPipeline:
             logger.warning("No chunks produced for document: %s", document.metadata.get("source"))
             return 0
 
-        texts = [c.content for c in chunks]
-        embeddings = self.encoder.encode(texts)
+        raw_texts = [c.content for c in chunks]
+
+        if effort == "high":
+            from .ingestion.tagger import OllamaTagger, enrich_text_with_tags
+            tagger = OllamaTagger(
+                model=self._cfg.tag_model,
+                host=self._cfg.ollama_host,
+                timeout=self._cfg.tag_timeout,
+            )
+            logger.info(
+                "High-effort ingestion: generating tags for %d chunks via %s",
+                len(chunks), self._cfg.tag_model,
+            )
+            all_tags = tagger.tag_chunks(raw_texts)
+            embed_texts = [enrich_text_with_tags(t, tags) for t, tags in zip(raw_texts, all_tags)]
+            logger.info("Tagging complete for '%s'", document.metadata.get("source", "?"))
+        else:
+            embed_texts = raw_texts
+            all_tags = [[] for _ in chunks]
+
+        embeddings = self.encoder.encode(embed_texts)
 
         ids = [f"{document.id}_{c.chunk_index}" for c in chunks]
-        metadatas = [
-            {k: str(v) if not isinstance(v, (str, int, float, bool)) else v for k, v in c.metadata.items()}
-            for c in chunks
-        ]
+        metadatas = []
+        for c, tags in zip(chunks, all_tags):
+            meta = {
+                k: str(v) if not isinstance(v, (str, int, float, bool)) else v
+                for k, v in c.metadata.items()
+            }
+            meta["effort"] = effort
+            if tags:
+                meta["tags"] = ", ".join(tags)
+            metadatas.append(meta)
 
         self.store.add(
             ids=ids,
             embeddings=embeddings,
-            documents=texts,
+            documents=embed_texts,
             metadatas=metadatas,
         )
-        logger.info("Ingested %d chunks from '%s'", len(chunks), document.metadata.get("source", "?"))
+        logger.info("Ingested %d chunks from '%s' [effort=%s]", len(chunks), document.metadata.get("source", "?"), effort)
         return len(chunks)
 
-    def ingest_file(self, path: str | Path, **csv_kwargs) -> int:
+    def ingest_file(self, path: str | Path, effort: str = "low", **csv_kwargs) -> int:
         """
         Load a file from disk, chunk it, and store it. Returns chunk count.
 
@@ -181,10 +214,10 @@ class RAGPipeline:
             docs = load_csv(path, **csv_kwargs)
             total = 0
             for doc in docs:
-                total += self.ingest_document(doc)
+                total += self.ingest_document(doc, effort=effort)
             return total
         doc = load_file(path)
-        return self.ingest_document(doc)
+        return self.ingest_document(doc, effort=effort)
 
     def ingest_text(self, text: str, source: str = "inline", **extra_meta: Any) -> int:
         """Ingest a raw string. Returns chunk count."""

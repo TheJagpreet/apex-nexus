@@ -3,9 +3,20 @@ const BASE = import.meta.env.VITE_RAG_URL || 'http://localhost:8000'
 async function handleResponse(res) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(err.detail ?? res.statusText)
+    throw new Error(parseDetail(err.detail, res.statusText))
   }
   return res.json()
+}
+
+function parseDetail(detail, fallback) {
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) {
+    return detail.map(d => {
+      const field = Array.isArray(d.loc) ? d.loc.filter(p => p !== 'body').join('.') : ''
+      return field ? `${field}: ${d.msg}` : d.msg
+    }).join('; ')
+  }
+  return fallback || 'Request failed'
 }
 
 // Health
@@ -48,7 +59,7 @@ export async function deleteCollection(name) {
   const res = await fetch(`${BASE}/collections/${encodeURIComponent(name)}`, { method: 'DELETE' })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(err.detail ?? res.statusText)
+    throw new Error(parseDetail(err.detail, res.statusText))
   }
 }
 
@@ -64,18 +75,20 @@ export async function deleteFile(collectionName, source) {
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(err.detail ?? res.statusText)
+    throw new Error(parseDetail(err.detail, res.statusText))
   }
 }
 
 /**
  * Ingest a file into a collection with SSE progress.
  * onProgress(event) receives parsed JSON events from the server.
+ * effort: 'low' (fast, default) | 'high' (LLM semantic tagging per chunk)
  * Returns total chunks ingested.
  */
-export async function ingestToCollection(collectionName, file, onProgress) {
+export async function ingestToCollection(collectionName, file, onProgress, effort = 'low') {
   const form = new FormData()
   form.append('file', file)
+  form.append('effort', effort)
 
   const res = await fetch(
     `${BASE}/collections/${encodeURIComponent(collectionName)}/ingest`,
@@ -83,7 +96,7 @@ export async function ingestToCollection(collectionName, file, onProgress) {
   )
   if (!res.ok) {
     const err = await res.json().catch(() => ({ detail: res.statusText }))
-    throw new Error(err.detail ?? res.statusText)
+    throw new Error(parseDetail(err.detail, res.statusText))
   }
 
   const reader = res.body.getReader()

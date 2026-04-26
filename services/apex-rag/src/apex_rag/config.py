@@ -70,5 +70,15 @@ class Settings(BaseSettings):
     ollama_model: str = Field(default="", description="Ollama model name, e.g. gemma3:4b. Empty = no LLM.")
     ollama_host: str = Field(default="http://localhost:11434", description="Ollama API host")
 
+    # High-effort ingestion — LLM semantic tagging
+    tag_model: str = Field(
+        default="gemma4:e2b",
+        description="Ollama model used to generate semantic tags per chunk (high-effort ingestion).",
+    )
+    tag_timeout: int = Field(
+        default=60,
+        description="Per-chunk HTTP timeout in seconds for tag generation.",
+    )
+
 
 settings = Settings()
